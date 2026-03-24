@@ -25,6 +25,8 @@ from typing import Dict, Any, List, Optional
 from dataclasses import dataclass, field
 from datetime import datetime
 
+from .database import get_db
+
 logger = logging.getLogger('fors8.pipeline')
 
 
@@ -111,8 +113,17 @@ def create_prediction(
     num_runs: int = 10,
     num_gpus: int = 2,
     vllm_endpoint: str = "",
+    conversation_context: Optional[str] = None,
+    previous_outcomes: Optional[Dict] = None,
 ) -> PredictionJob:
-    """Create a new prediction job and start it in a background thread."""
+    """Create a new prediction job and start it in a background thread.
+
+    Args:
+        conversation_context: Text of previous Q&A in this conversation, used
+            to give agents awareness of prior analysis across follow-up runs.
+        previous_outcomes: Outcomes dict from the last prediction run, so the
+            new run can build on earlier results.
+    """
 
     job = PredictionJob(
         prediction_id=f"pred_{uuid.uuid4().hex[:12]}",
@@ -129,10 +140,16 @@ def create_prediction(
     _evict_old_jobs()
     _jobs[job.prediction_id] = job
 
+    # Persist the initial prediction to PostgreSQL
+    try:
+        get_db().save_prediction(job.to_dict())
+    except Exception:
+        logger.debug("Initial prediction DB save skipped (DB may be unavailable)")
+
     # Run the pipeline in a background thread
     thread = threading.Thread(
         target=_run_pipeline,
-        args=(job,),
+        args=(job, conversation_context, previous_outcomes),
         daemon=True,
     )
     thread.start()
@@ -141,7 +158,47 @@ def create_prediction(
     return job
 
 
-def _run_pipeline(job: PredictionJob):
+def _persist_job(job: PredictionJob):
+    """Best-effort save of current job state to PostgreSQL."""
+    try:
+        get_db().save_prediction(job.to_dict())
+    except Exception:
+        logger.debug("DB persist skipped for %s", job.prediction_id)
+
+
+def _save_run_memories(job: PredictionJob, run_idx: int, outcome):
+    """Save key insights from a simulation run as agent memories."""
+    try:
+        db = get_db()
+        # Save per-actor memories from this run
+        for aid, state in (outcome.actor_states or {}).items():
+            insight = (
+                f"Run {run_idx + 1}: final_escalation={outcome.final_escalation}, "
+                f"phase={outcome.final_phase}, force={state.get('force_strength', '?')}, "
+                f"casualties={state.get('casualties', '?')}, "
+                f"approval={state.get('domestic_approval', '?')}"
+            )
+            db.save_memory(
+                actor_id=aid,
+                content=insight,
+                memory_type="run_outcome",
+                source_prediction_id=job.prediction_id,
+                round_num=outcome.final_round,
+            )
+        # Save key events as memories under a synthetic "events" actor
+        for event_text in (outcome.key_events or []):
+            db.save_memory(
+                actor_id="__events__",
+                content=event_text,
+                memory_type="key_event",
+                source_prediction_id=job.prediction_id,
+                round_num=outcome.final_round,
+            )
+    except Exception:
+        logger.debug("Failed to save run memories for run %d", run_idx)
+
+
+def _run_pipeline(job: PredictionJob, conversation_context: Optional[str] = None, previous_outcomes: Optional[Dict] = None):
     """Execute the full prediction pipeline in a background thread."""
     try:
         job.started_at = datetime.now().isoformat()
@@ -220,6 +277,7 @@ def _run_pipeline(job: PredictionJob):
         # Step 4: Run parallel simulations
         job.status = "simulating"
         job.progress_pct = 35
+        _persist_job(job)
 
         from .prediction_engine import PredictionEngine, RunOutcome
         ce = ConsequenceEngine()
@@ -282,13 +340,22 @@ def _run_pipeline(job: PredictionJob):
                     break
 
                 # Build situation JSON
-                situation = json.dumps({
+                situation_data = {
                     "round": round_num,
                     "escalation": ws.escalation_level,
                     "oil_price": ws.oil_price,
                     "phase": ws.phase,
                     "hormuz": "open" if ws.strait_of_hormuz_open else "closed",
-                }, default=str)
+                }
+                if conversation_context:
+                    situation_data["previous_analysis"] = (
+                        f"Previous analysis from earlier simulation runs suggested: "
+                        f"{conversation_context}. Consider whether this analysis still "
+                        f"holds given the current situation."
+                    )
+                if previous_outcomes:
+                    situation_data["previous_outcome_probabilities"] = previous_outcomes
+                situation = json.dumps(situation_data, default=str)
 
                 # Get decisions from vLLM for all agents
                 decisions = runner.run_round_sync_wrapper(
@@ -349,6 +416,10 @@ def _run_pipeline(job: PredictionJob):
                 total_events=len(ws.events),
             )
             all_outcomes.append(outcome)
+            _save_run_memories(job, run_idx, outcome)
+
+        # Persist status heading into aggregation
+        _persist_job(job)
 
         # Step 5: Aggregate
         job.status = "aggregating"
@@ -368,6 +439,16 @@ def _run_pipeline(job: PredictionJob):
 
         # Use vLLM to answer the user's question
         import requests
+
+        previous_context_section = ""
+        if conversation_context:
+            previous_context_section = f"""
+PREVIOUS ANALYSIS (from earlier simulation runs in this conversation):
+{conversation_context}
+
+Build on the previous analysis above. Note where this run's results confirm, refine, or contradict earlier findings.
+"""
+
         answer_prompt = f"""Based on {job.num_runs} parallel war simulations with {job.num_agents} AI agents, here are the aggregated results:
 
 OUTCOME PROBABILITIES: {json.dumps(prediction.outcome_probabilities)}
@@ -377,7 +458,7 @@ AVERAGE OIL PRICE: ${prediction.avg_oil_price:.0f}
 
 ACTOR OUTCOMES:
 {json.dumps(prediction.actor_predictions, indent=2)}
-
+{previous_context_section}
 USER QUESTION: {job.question}
 
 Answer the question directly and specifically based on the simulation data. Include probability percentages. Be detailed but concise (3-5 paragraphs)."""
@@ -420,6 +501,9 @@ Answer the question directly and specifically based on the simulation data. Incl
             except Exception as destroy_err:
                 logger.error(f"Failed to destroy instance {job.vast_instance_id} after success: {destroy_err}")
 
+        # Persist final completed state to PostgreSQL
+        _persist_job(job)
+
         logger.info(f"Prediction {job.prediction_id} complete. GPU cost: ${job.gpu_cost:.2f}")
 
     except Exception as e:
@@ -428,6 +512,9 @@ Answer the question directly and specifically based on the simulation data. Incl
         job.status = "failed"
         job.error = str(e)
         job.progress_message = f"Failed: {str(e)}"
+
+        # Persist failed state to PostgreSQL
+        _persist_job(job)
 
         # Cleanup GPU on failure — destroy all instances tracked by the client,
         # not just job.vast_instance_id, because the instance may have been

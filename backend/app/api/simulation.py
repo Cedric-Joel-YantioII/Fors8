@@ -267,6 +267,7 @@ def _check_simulation_prepared(simulation_id: str) -> tuple:
     # Determine required files based on simulation mode.
     # Geopolitical mode uses actor_profiles.json; social_media mode uses reddit/twitter profiles.
     # We detect mode from state.json if present, otherwise check which profile files exist.
+    import json
     _state_path = os.path.join(simulation_dir, "state.json")
     _detected_mode = "social_media"
     if os.path.exists(_state_path):

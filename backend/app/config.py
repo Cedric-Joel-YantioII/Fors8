@@ -77,6 +77,9 @@ class Config:
     # Iran conflict data directory
     IRAN_DATA_DIR = os.path.join(os.path.dirname(__file__), '../data/iran_conflict')
     
+    # PostgreSQL persistence
+    DATABASE_URL = os.environ.get('DATABASE_URL', 'dbname=fors8 user=joelc host=localhost')
+
     # Report Agent配置
     REPORT_AGENT_MAX_TOOL_CALLS = int(os.environ.get('REPORT_AGENT_MAX_TOOL_CALLS', '5'))
     REPORT_AGENT_MAX_REFLECTION_ROUNDS = int(os.environ.get('REPORT_AGENT_MAX_REFLECTION_ROUNDS', '2'))

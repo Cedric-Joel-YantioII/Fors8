@@ -27,6 +27,9 @@ PyMuPDF>=1.24.0
 charset-normalizer>=3.0.0
 chardet>=5.0.0
 
+# ============= 数据库 =============
+psycopg2-binary>=2.9.0
+
 # ============= 工具库 =============
 # 环境变量加载
 python-dotenv>=1.0.0

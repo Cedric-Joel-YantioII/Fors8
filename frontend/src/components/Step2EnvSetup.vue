@@ -124,13 +124,13 @@
                   @click="selectProfile(profile)"
                 >
                   <div class="profile-header">
-                    <span class="profile-realname">{{ profile.username || 'Unknown' }}</span>
-                    <span class="profile-username">@{{ profile.name || `agent_${idx}` }}</span>
+                    <span class="profile-realname">{{ profile.username || profile.actor_name || 'Unknown' }}</span>
+                    <span class="profile-username">@{{ profile.name || profile.actor_id || `agent_${idx}` }}</span>
                   </div>
                   <div class="profile-meta">
-                    <span class="profile-profession">{{ profile.profession || 'Unknown' }}</span>
+                    <span class="profile-profession">{{ profile.profession || profile.actor_type || 'Unknown' }}</span>
                   </div>
-                  <p class="profile-bio">{{ profile.bio || 'No bio available' }}</p>
+                  <p class="profile-bio">{{ profile.bio || profile.description || 'No bio available' }}</p>
                   <div v-if="profile.interested_topics?.length" class="profile-topics">
                     <span
                       v-for="topic in profile.interested_topics.slice(0, 3)"
@@ -570,10 +570,10 @@
           <div class="modal-header">
           <div class="modal-header-info">
             <div class="modal-name-row">
-              <span class="modal-realname">{{ selectedProfile.username }}</span>
-              <span class="modal-username">@{{ selectedProfile.name }}</span>
+              <span class="modal-realname">{{ selectedProfile.username || selectedProfile.actor_name }}</span>
+              <span class="modal-username">@{{ selectedProfile.name || selectedProfile.actor_id }}</span>
             </div>
-            <span class="modal-profession">{{ selectedProfile.profession }}</span>
+            <span class="modal-profession">{{ selectedProfile.profession || selectedProfile.actor_type }}</span>
           </div>
           <button class="close-btn" @click="selectedProfile = null">×</button>
         </div>

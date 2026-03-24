@@ -110,7 +110,7 @@
                   <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                   <circle cx="12" cy="7" r="4"></circle>
                 </svg>
-                <span>{{ selectedAgent ? selectedAgent.username : 'Chat with any individual' }}</span>
+                <span>{{ selectedAgent ? (selectedAgent.username || selectedAgent.actor_name) : 'Chat with any individual' }}</span>
                 <svg class="dropdown-arrow" :class="{ open: showAgentDropdown }" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
                   <polyline points="6 9 12 15 18 9"></polyline>
                 </svg>
@@ -219,12 +219,12 @@
           <!-- Agent Profile Card -->
           <div v-if="chatTarget === 'agent' && selectedAgent" class="agent-profile-card">
             <div class="profile-card-header">
-              <div class="profile-card-avatar">{{ (selectedAgent.username || 'A')[0] }}</div>
+              <div class="profile-card-avatar">{{ (selectedAgent.username || selectedAgent.actor_name || 'A')[0] }}</div>
               <div class="profile-card-info">
-                <div class="profile-card-name">{{ selectedAgent.username }}</div>
+                <div class="profile-card-name">{{ selectedAgent.username || selectedAgent.actor_name }}</div>
                 <div class="profile-card-meta">
-                  <span v-if="selectedAgent.name" class="profile-card-handle">@{{ selectedAgent.name }}</span>
-                  <span class="profile-card-profession">{{ selectedAgent.profession || 'Unknown' }}</span>
+                  <span v-if="selectedAgent.name || selectedAgent.actor_id" class="profile-card-handle">@{{ selectedAgent.name || selectedAgent.actor_id }}</span>
+                  <span class="profile-card-profession">{{ selectedAgent.profession || selectedAgent.actor_type || 'Unknown' }}</span>
                 </div>
               </div>
               <button class="profile-card-toggle" @click="showFullProfile = !showFullProfile">
@@ -233,10 +233,10 @@
                 </svg>
               </button>
             </div>
-            <div v-if="showFullProfile && selectedAgent.bio" class="profile-card-body">
+            <div v-if="showFullProfile && (selectedAgent.bio || selectedAgent.description)" class="profile-card-body">
               <div class="profile-card-bio">
-                <div class="profile-card-label">Bio</div>
-                <p>{{ selectedAgent.bio }}</p>
+                <div class="profile-card-label">{{ selectedAgent.bio ? 'Bio' : 'Description' }}</div>
+                <p>{{ selectedAgent.bio || selectedAgent.description }}</p>
               </div>
             </div>
           </div>
@@ -535,7 +535,7 @@ const selectAgent = (agent, idx) => {
   
   // 恢复该 Agent 的对话记录
   chatHistory.value = chatHistoryCache.value[`agent_${idx}`] || []
-  addLog(`Selected chat target: ${agent.username}`)
+  addLog(`Selected chat target: ${agent.username || agent.actor_name}`)
 }
 
 const formatTime = (timestamp) => {
@@ -743,10 +743,11 @@ const sendToAgent = async (message) => {
     const agentId = selectedAgentIndex.value
     
     if (typeof resultsDict === 'object' && !Array.isArray(resultsDict)) {
-      // 优先使用 reddit 平台回复，其次 twitter
+      // 优先使用 geopolitical/reddit 平台回复，其次 twitter
+      const geoKey = `geopolitical_${agentId}`
       const redditKey = `reddit_${agentId}`
       const twitterKey = `twitter_${agentId}`
-      const agentResult = resultsDict[redditKey] || resultsDict[twitterKey] || Object.values(resultsDict)[0]
+      const agentResult = resultsDict[geoKey] || resultsDict[redditKey] || resultsDict[twitterKey] || Object.values(resultsDict)[0]
       if (agentResult) {
         responseContent = agentResult.response || agentResult.answer
       }
@@ -754,14 +755,14 @@ const sendToAgent = async (message) => {
       // 兼容数组格式
       responseContent = resultsDict[0].response || resultsDict[0].answer
     }
-    
+
     if (responseContent) {
       chatHistory.value.push({
         role: 'assistant',
         content: responseContent,
         timestamp: new Date().toISOString()
       })
-      addLog(`${selectedAgent.value.username} replied`)
+      addLog(`${selectedAgent.value.username || selectedAgent.value.actor_name} replied`)
     } else {
       throw new Error('No response data')
     }
@@ -829,13 +830,14 @@ const submitSurvey = async () => {
         const agentIdx = interview.agent_id
         const agent = profiles.value[agentIdx]
         
-        // 优先使用 reddit 平台回复，其次 twitter
+        // 优先使用 reddit/geopolitical 平台回复，其次 twitter
         let responseContent = '无响应'
-        
+
         if (typeof resultsDict === 'object' && !Array.isArray(resultsDict)) {
+          const geoKey = `geopolitical_${agentIdx}`
           const redditKey = `reddit_${agentIdx}`
           const twitterKey = `twitter_${agentIdx}`
-          const agentResult = resultsDict[redditKey] || resultsDict[twitterKey]
+          const agentResult = resultsDict[geoKey] || resultsDict[redditKey] || resultsDict[twitterKey]
           if (agentResult) {
             responseContent = agentResult.response || agentResult.answer || 'No response'
           }
@@ -846,11 +848,11 @@ const submitSurvey = async () => {
             responseContent = matchedResult.response || matchedResult.answer || 'No response'
           }
         }
-        
+
         surveyResultsList.push({
           agent_id: agentIdx,
-          agent_name: agent?.username || `Agent ${agentIdx}`,
-          profession: agent?.profession,
+          agent_name: agent?.username || agent?.actor_name || `Agent ${agentIdx}`,
+          profession: agent?.profession || agent?.actor_type,
           question: surveyQuestion.value.trim(),
           answer: responseContent
         })

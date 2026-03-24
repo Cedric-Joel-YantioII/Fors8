@@ -330,12 +330,15 @@ class SimulationRunner:
                 state.recent_actions.append(AgentAction(
                     round_num=a.get("round_num", 0),
                     timestamp=a.get("timestamp", ""),
-                    platform=a.get("platform", ""),
+                    action_domain=a.get("action_domain", a.get("platform", "")),
                     agent_id=a.get("agent_id", 0),
                     agent_name=a.get("agent_name", ""),
                     action_type=a.get("action_type", ""),
                     action_args=a.get("action_args", {}),
+                    target_name=a.get("target_name"),
                     result=a.get("result"),
+                    reasoning=a.get("reasoning"),
+                    escalation_delta=a.get("escalation_delta", 0),
                     success=a.get("success", True),
                 ))
             
@@ -662,16 +665,22 @@ class SimulationRunner:
             with open(actions_log_path, 'a', encoding='utf-8') as f:
                 f.write(json.dumps(entry, ensure_ascii=False) + '\n')
 
+        # Get graph updater if enabled
+        graph_updater = None
+        if cls._graph_memory_enabled.get(simulation_id, False):
+            graph_updater = ZepGraphMemoryManager.get_updater(simulation_id)
+
         def on_action_resolved(event, resolution):
             """Feed each resolved action into the run state AND the JSONL log."""
             domain_str = event.action_domain.value if hasattr(event.action_domain, 'value') else str(event.action_domain)
+            action_type_str = event.action_type.value if hasattr(event.action_type, 'value') else str(event.action_type)
             action = AgentAction(
                 round_num=event.round_num,
                 timestamp=event.timestamp,
                 action_domain=domain_str,
                 agent_id=event.actor_id,
                 agent_name=event.actor_name,
-                action_type=event.action_type.value if hasattr(event.action_type, 'value') else str(event.action_type),
+                action_type=action_type_str,
                 target_name=event.target_actor_name,
                 result=event.consequence_summary,
                 reasoning=event.reasoning,
@@ -679,18 +688,23 @@ class SimulationRunner:
             )
             state.add_action(action)
 
-            _write_action_log({
+            action_data = {
                 "round": event.round_num,
                 "timestamp": event.timestamp,
                 "actor": event.actor_name,
                 "actor_id": event.actor_id,
-                "action_type": event.action_type.value if hasattr(event.action_type, 'value') else str(event.action_type),
+                "action_type": action_type_str,
                 "action_domain": domain_str,
                 "target": event.target_actor_name,
                 "reasoning": event.reasoning,
                 "consequence": event.consequence_summary,
                 "escalation_delta": event.escalation_delta,
-            })
+            }
+            _write_action_log(action_data)
+
+            # Feed to Zep graph memory if enabled
+            if graph_updater:
+                graph_updater.add_activity_from_dict(action_data, "geopolitical")
 
         def on_round_complete(ws):
             """Update run state with round-level info and write snapshot."""
@@ -1195,7 +1209,8 @@ class SimulationRunner:
                     # 过滤
                     if platform_filter and record_platform != platform_filter:
                         continue
-                    if agent_id is not None and data.get("agent_id") != agent_id:
+                    record_agent_id = data.get("agent_id", data.get("actor_id"))
+                    if agent_id is not None and record_agent_id != agent_id:
                         continue
                     if round_num is not None and data.get("round") != round_num:
                         continue

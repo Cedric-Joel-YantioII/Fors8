@@ -65,12 +65,14 @@ def create_app(config_class=Config):
     # 注册蓝图
     from .api import graph_bp, simulation_bp, report_bp, data_bp, auth_bp
     from .api.predict import predict_bp
+    from .api.conversations import conversations_bp
     app.register_blueprint(graph_bp, url_prefix='/api/graph')
     app.register_blueprint(simulation_bp, url_prefix='/api/simulation')
     app.register_blueprint(report_bp, url_prefix='/api/report')
     app.register_blueprint(data_bp, url_prefix='/api/data')
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(predict_bp, url_prefix='/api/predict')
+    app.register_blueprint(conversations_bp, url_prefix='/api/conversations')
     
     # 健康检查
     @app.route('/health')

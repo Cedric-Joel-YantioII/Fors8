@@ -4,6 +4,7 @@
     <nav class="nav">
       <div class="nav-brand">FORS8</div>
       <div class="nav-links">
+        <router-link to="/chat" class="nav-link">Chat</router-link>
         <router-link to="/settings" class="nav-link">Settings</router-link>
         <a href="https://github.com/666ghj/MiroFish" target="_blank" class="nav-link">GitHub <span class="arrow">↗</span></a>
       </div>

@@ -7,6 +7,7 @@ import ReportView from '../views/ReportView.vue'
 import InteractionView from '../views/InteractionView.vue'
 import SettingsPage from '../components/SettingsPage.vue'
 import PredictView from '../views/PredictView.vue'
+import ChatView from '../views/ChatView.vue'
 
 const routes = [
   {
@@ -53,6 +54,17 @@ const routes = [
     path: '/predict/:predictionId',
     name: 'Predict',
     component: PredictView,
+    props: true
+  },
+  {
+    path: '/chat',
+    name: 'Chat',
+    component: ChatView
+  },
+  {
+    path: '/chat/:conversationId',
+    name: 'ChatConversation',
+    component: ChatView,
     props: true
   }
 ]

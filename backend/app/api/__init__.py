@@ -15,4 +15,5 @@ from . import simulation  # noqa: E402, F401
 from . import report  # noqa: E402, F401
 from . import data_sources  # noqa: E402, F401
 from . import auth  # noqa: E402, F401
+from .conversations import conversations_bp  # noqa: E402, F401
 

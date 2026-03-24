@@ -161,15 +161,23 @@ class PredictionEngine:
         return result
 
     def generate_answers(
-        self, prediction: PredictionResult, outcomes: List[RunOutcome]
+        self, prediction: PredictionResult, outcomes: List[RunOutcome],
+        previous_context: Optional[str] = None,
     ) -> PredictionResult:
-        """Use LLM to generate narrative answers to prediction questions."""
+        """Use LLM to generate narrative answers to prediction questions.
+
+        Args:
+            previous_context: Text from prior prediction runs in the same
+                conversation, so answers can reference and build on earlier analysis.
+        """
         if not self.llm_client:
             prediction.answers = {q[0]: "LLM not configured" for q in PREDICTION_QUESTIONS}
             return prediction
 
         # Build context from aggregated data
         context = self._build_answer_context(prediction, outcomes)
+        if previous_context:
+            context += f"\n\nPREVIOUS ANALYSIS (from earlier simulation runs):\n{previous_context}\n\nBuild on the previous analysis above. Note where this run's results confirm, refine, or contradict earlier findings.\n"
 
         for question_id, question_text in PREDICTION_QUESTIONS:
             try:
@@ -183,13 +191,21 @@ class PredictionEngine:
         return prediction
 
     def answer_custom_question(
-        self, question: str, prediction: PredictionResult, outcomes: List[RunOutcome]
+        self, question: str, prediction: PredictionResult, outcomes: List[RunOutcome],
+        previous_context: Optional[str] = None,
     ) -> str:
-        """Answer a custom user question based on simulation results."""
+        """Answer a custom user question based on simulation results.
+
+        Args:
+            previous_context: Text from prior prediction runs in the same
+                conversation, so the answer can reference earlier analysis.
+        """
         if not self.llm_client:
             return "LLM not configured. Please set up an AI provider in Settings."
 
         context = self._build_answer_context(prediction, outcomes)
+        if previous_context:
+            context += f"\n\nPREVIOUS ANALYSIS (from earlier simulation runs):\n{previous_context}\n\nBuild on the previous analysis above. Note where this run's results confirm, refine, or contradict earlier findings.\n"
         return self._answer_question(question, context, prediction)
 
     def _classify_outcomes(self, outcomes: List[RunOutcome]) -> Dict[str, float]:
