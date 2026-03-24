@@ -41,6 +41,15 @@ def create_app(config_class=Config):
     
     # 启用CORS
     CORS(app, resources={r"/api/*": {"origins": "*"}})
+
+    # Auto-migrate database schema (safe to call every startup)
+    try:
+        from .services.db_migrate import ensure_schema
+        ensure_schema()
+        if should_log_startup:
+            logger.info("数据库 schema 检查完成")
+    except Exception as exc:
+        logger.warning("数据库 schema 迁移跳过: %s", exc)
     
     # 注册模拟进程清理函数（确保服务器关闭时终止所有模拟进程）
     from .services.simulation_runner import SimulationRunner

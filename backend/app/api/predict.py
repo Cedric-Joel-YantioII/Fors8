@@ -42,8 +42,10 @@ def start_prediction():
         except ImportError:
             pass  # dotenv not installed; rely on existing environment variables
 
+        # If the user provides an explicit endpoint, use it directly.
+        # Otherwise leave blank — the GPU lifecycle manager will auto-provision.
         vllm_endpoint = request.form.get('vllm_endpoint', '') or os.environ.get('VLLM_ENDPOINT', '')
-        model_name = request.form.get('model_name', '') or os.environ.get('VLLM_MODEL', 'qwen2.5:72b')
+        model_name = request.form.get('model_name', '') or os.environ.get('VLLM_MODEL', 'qwen2.5:32b')
 
         logger.info(f"Predict request: question='{question[:50]}...' endpoint={vllm_endpoint} model={model_name}")
 

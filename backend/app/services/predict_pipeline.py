@@ -202,45 +202,40 @@ def _run_pipeline(job: PredictionJob, conversation_context: Optional[str] = None
     """Execute the full prediction pipeline in a background thread."""
     try:
         job.started_at = datetime.now().isoformat()
-        vastai_client = None
+        gpu_lifecycle = None
 
-        # Step 1: Get a vLLM endpoint (either provision or use existing)
+        # Step 1: Get an inference endpoint
+        # Priority: explicit endpoint > GPU lifecycle manager (auto-provisions Vast.ai)
         if job.vllm_endpoint:
             # User provided a manual endpoint
             job.status = "loading_model"
-            job.progress_message = f"Using existing vLLM endpoint: {job.vllm_endpoint}"
+            job.progress_message = f"Using existing endpoint: {job.vllm_endpoint}"
             job.progress_pct = 15
             endpoint = job.vllm_endpoint
         else:
-            # Provision Vast.ai
+            # Use the GPU lifecycle manager — it handles provisioning,
+            # model pulling, idle timeout, and auto-destroy transparently.
             job.status = "provisioning"
-            job.progress_message = "Searching for cheapest GPUs on Vast.ai..."
+            job.progress_message = "GPU lifecycle: acquiring endpoint..."
             job.progress_pct = 5
 
-            from .vastai_client import VastAIClient
-            api_key = os.environ.get('VASTAI_API_KEY', '')
-            if not api_key:
-                raise RuntimeError("No VASTAI_API_KEY configured. Add it in Settings → Self-Hosted GPU.")
-
-            vastai_client = VastAIClient(api_key=api_key)
+            from .gpu_lifecycle import get_gpu_lifecycle
+            gpu_lifecycle = get_gpu_lifecycle()
 
             def progress_cb(msg):
                 job.progress_message = msg
                 if "Searching" in msg: job.progress_pct = 5
                 elif "Launching" in msg or "Found" in msg: job.progress_pct = 10
-                elif "Downloading" in msg or "loading" in msg.lower(): job.progress_pct = 15
-                elif "loaded" in msg.lower() or "ready" in msg.lower(): job.progress_pct = 25
-                elif "GUARDRAIL" in msg: job.progress_pct = 0
+                elif "Pulling" in msg or "pulling" in msg.lower(): job.progress_pct = 15
+                elif "ready" in msg.lower() or "Verifying" in msg: job.progress_pct = 25
+                elif "Still" in msg: job.progress_pct = 18
 
-            instance = vastai_client.launch_and_wait(
-                model_name=job.model_name,
-                num_gpus=job.num_gpus,
+            endpoint = gpu_lifecycle.get_endpoint(
+                model=job.model_name,
                 progress_callback=progress_cb,
             )
-
-            endpoint = instance.endpoint_url
             job.vllm_endpoint = endpoint
-            job.vast_instance_id = instance.instance_id
+            gpu_lifecycle.mark_prediction_start()
 
         # Step 2: Verify vLLM is serving
         job.status = "loading_model"
@@ -490,21 +485,23 @@ Answer the question directly and specifically based on the simulation data. Incl
         job.progress_pct = 100
         job.completed_at = datetime.now().isoformat()
 
-        # Destroy Vast.ai instance if we provisioned one
-        if vastai_client and job.vast_instance_id:
+        # Mark prediction end on the lifecycle manager (starts idle timer,
+        # does NOT destroy — the instance stays warm for the next prediction).
+        if gpu_lifecycle:
             try:
-                job.progress_message = "Tearing down GPU instance..."
-                vastai_client.destroy_instance(job.vast_instance_id)
-                instance = vastai_client.instances.get(job.vast_instance_id)
-                if instance:
-                    job.gpu_cost = instance.total_cost
-            except Exception as destroy_err:
-                logger.error(f"Failed to destroy instance {job.vast_instance_id} after success: {destroy_err}")
+                prediction_cost = gpu_lifecycle.mark_prediction_end()
+                job.gpu_cost = prediction_cost
+                job.progress_message = (
+                    f"Prediction complete. GPU cost: ${prediction_cost:.4f}. "
+                    f"Instance will auto-destroy after idle timeout."
+                )
+            except Exception as e:
+                logger.error(f"Failed to mark prediction end: {e}")
 
         # Persist final completed state to PostgreSQL
         _persist_job(job)
 
-        logger.info(f"Prediction {job.prediction_id} complete. GPU cost: ${job.gpu_cost:.2f}")
+        logger.info(f"Prediction {job.prediction_id} complete. GPU cost: ${job.gpu_cost:.4f}")
 
     except Exception as e:
         import traceback
@@ -516,12 +513,11 @@ Answer the question directly and specifically based on the simulation data. Incl
         # Persist failed state to PostgreSQL
         _persist_job(job)
 
-        # Cleanup GPU on failure — destroy all instances tracked by the client,
-        # not just job.vast_instance_id, because the instance may have been
-        # launched but its ID not yet recorded on the job (e.g., timeout during wait_until_ready).
-        if vastai_client:
-            for inst_id in list(vastai_client.instances.keys()):
-                try:
-                    vastai_client.destroy_instance(inst_id)
-                except Exception:
-                    logger.error(f"Failed to destroy leaked instance {inst_id} during error cleanup")
+        # On failure, mark prediction end so the idle timer starts.
+        # The lifecycle manager will auto-destroy after the timeout.
+        # We do NOT destroy immediately — the user might retry quickly.
+        if gpu_lifecycle:
+            try:
+                gpu_lifecycle.mark_prediction_end()
+            except Exception:
+                logger.debug("Failed to mark prediction end during error cleanup")

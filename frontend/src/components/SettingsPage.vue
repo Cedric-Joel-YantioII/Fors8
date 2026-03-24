@@ -152,6 +152,16 @@
                 <label>Vast.ai API Key <span class="optional">(for auto-provisioning)</span></label>
                 <input type="password" v-model="vastaiKey" placeholder="Your Vast.ai API key" />
               </div>
+              <p class="provision-note">Fors8 automatically provisions and destroys GPU instances. Instances auto-shutdown after 10 minutes of inactivity to save costs.</p>
+              <div class="form-group">
+                <label>Auto-shutdown after inactivity</label>
+                <select v-model.number="idleTimeout">
+                  <option :value="5">5 minutes</option>
+                  <option :value="10">10 minutes (recommended)</option>
+                  <option :value="30">30 minutes</option>
+                  <option :value="60">1 hour</option>
+                </select>
+              </div>
               <div class="form-divider"><span>or</span></div>
               <div class="form-group">
                 <label>vLLM Endpoint <span class="optional">(if self-managed)</span></label>
@@ -170,6 +180,7 @@
               >
                 <div class="gpu-model-name">{{ m.name }}</div>
                 <div class="gpu-model-meta">{{ m.gpus }} &middot; ${{ m.costPerHour }}/hr</div>
+                <div class="gpu-model-size">{{ m.sizeGb }} GB download</div>
                 <div class="gpu-model-note">{{ m.strengths }}</div>
               </div>
             </div>
@@ -236,7 +247,7 @@ export default {
       selectedModel: 'openrouter/free',
       vastaiKey: '',
       vllmEndpoint: '',
-      selectedVllmModel: 'qwen2.5-72b',
+      selectedVllmModel: 'qwen2.5:72b',
       numGpus: 4,
       agentsPerRun: 100000,
       parallelRuns: 10,
@@ -260,11 +271,15 @@ export default {
         },
       ],
 
+      idleTimeout: 10,
+
       vllmModels: [
-        { id: 'qwen2.5-72b', name: 'Qwen 2.5 72B', gpus: '2–4× A100', costPerHour: 3.0, strengths: 'Best JSON reliability. Recommended.' },
-        { id: 'deepseek-v3', name: 'DeepSeek V3', gpus: '4–8× A100', costPerHour: 6.0, strengths: 'Best reasoning accuracy.' },
-        { id: 'llama3-70b', name: 'Llama 3.1 70B', gpus: '2–4× A100', costPerHour: 3.0, strengths: 'Balanced reasoning and speed.' },
-        { id: 'qwen2.5-14b', name: 'Qwen 2.5 14B', gpus: '1× RTX 4090', costPerHour: 0.4, strengths: 'Fastest. Cheapest. Good for mass agents.' },
+        { id: 'qwen2.5:72b', name: 'Qwen 2.5 72B', gpus: '2× A100 (80GB)', costPerHour: 0.30, sizeGb: 42, strengths: 'Best JSON reliability. Recommended for war prediction.' },
+        { id: 'qwen2.5:32b', name: 'Qwen 2.5 32B', gpus: '1× A100 or 2× 4090', costPerHour: 0.15, sizeGb: 20, strengths: 'Good balance of speed and quality.' },
+        { id: 'qwen2.5:14b', name: 'Qwen 2.5 14B', gpus: '1× RTX 4090', costPerHour: 0.08, sizeGb: 9, strengths: 'Fast and cheap. Good for testing.' },
+        { id: 'deepseek-v3:latest', name: 'DeepSeek V3', gpus: '2× A100 (80GB)', costPerHour: 0.30, sizeGb: 40, strengths: 'Best reasoning accuracy.' },
+        { id: 'llama3.1:70b', name: 'Llama 3.1 70B', gpus: '2× A100 (80GB)', costPerHour: 0.30, sizeGb: 42, strengths: 'Balanced, well-tested by community.' },
+        { id: 'mistral:7b', name: 'Mistral 7B', gpus: '1× RTX 3090', costPerHour: 0.05, sizeGb: 4, strengths: 'Ultra-fast, cheapest. For quick tests.' },
       ],
 
       openrouterModels: [
@@ -308,6 +323,10 @@ export default {
         if (savedModel) this.selectedModel = savedModel
       } else if (savedProvider === 'vllm') {
         if (savedVllmEndpoint) this.vllmEndpoint = savedVllmEndpoint
+        const savedVllmModel = localStorage.getItem('fors8_vllm_model')
+        if (savedVllmModel) this.selectedVllmModel = savedVllmModel
+        const savedIdleTimeout = localStorage.getItem('fors8_idle_timeout')
+        if (savedIdleTimeout) this.idleTimeout = Number(savedIdleTimeout)
       }
     }
   },
@@ -326,12 +345,12 @@ export default {
       const m = this.vllmModels.find(v => v.id === this.selectedVllmModel)
       if (!m) return 0
       const calls = this.agentsPerRun * 0.1 * 10 * this.parallelRuns
-      const throughput = this.selectedVllmModel === 'qwen2.5-14b' ? 700 : 300
+      const throughput = this.selectedVllmModel === 'qwen2.5:14b' || this.selectedVllmModel === 'mistral:7b' ? 700 : 300
       return (calls / throughput / 3600) * m.costPerHour * this.numGpus
     },
     estimatedTime() {
       const calls = this.agentsPerRun * 0.1 * 10 * this.parallelRuns
-      const throughput = this.selectedVllmModel === 'qwen2.5-14b' ? 700 : 300
+      const throughput = this.selectedVllmModel === 'qwen2.5:14b' || this.selectedVllmModel === 'mistral:7b' ? 700 : 300
       return Math.ceil(calls / throughput / 60)
     },
     totalCalls() {
@@ -363,6 +382,8 @@ export default {
       alert('Saved')
     },
     provisionGpus() {
+      localStorage.setItem('fors8_vllm_model', this.selectedVllmModel)
+      localStorage.setItem('fors8_idle_timeout', this.idleTimeout)
       localStorage.setItem('fors8_provider', 'vllm')
       if (this.vllmEndpoint) {
         localStorage.setItem('fors8_vllm_endpoint', this.vllmEndpoint)
@@ -796,7 +817,19 @@ export default {
 
 .gpu-model-name { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
 .gpu-model-meta { font-size: 12px; color: #888; }
-.gpu-model-note { font-size: 11px; color: #aaa; margin-top: 6px; }
+.gpu-model-size { font-size: 11px; color: #3b82f6; margin-top: 4px; }
+.gpu-model-note { font-size: 11px; color: #aaa; margin-top: 4px; }
+
+.provision-note {
+  font-size: 12px;
+  color: #888;
+  line-height: 1.5;
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  background: #f9f9f9;
+  border-radius: 8px;
+  border: 1px solid #eee;
+}
 
 .scale-grid {
   display: grid;
