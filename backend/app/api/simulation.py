@@ -214,10 +214,13 @@ def create_simulation():
                 "error": "项目尚未构建图谱，请先调用 /api/graph/build"
             }), 400
         
+        mode = data.get('mode', 'geopolitical')  # geopolitical (default) or social_media
+
         manager = SimulationManager()
         state = manager.create_simulation(
             project_id=project_id,
             graph_id=graph_id,
+            mode=mode,
             enable_twitter=data.get('enable_twitter', True),
             enable_reddit=data.get('enable_reddit', True),
         )
@@ -261,14 +264,33 @@ def _check_simulation_prepared(simulation_id: str) -> tuple:
     if not os.path.exists(simulation_dir):
         return False, {"reason": "模拟目录不存在"}
     
-    # 必要文件列表（不包括脚本，脚本位于 backend/scripts/）
-    required_files = [
-        "state.json",
-        "simulation_config.json",
-        "reddit_profiles.json",
-        "twitter_profiles.csv"
-    ]
-    
+    # Determine required files based on simulation mode.
+    # Geopolitical mode uses actor_profiles.json; social_media mode uses reddit/twitter profiles.
+    # We detect mode from state.json if present, otherwise check which profile files exist.
+    _state_path = os.path.join(simulation_dir, "state.json")
+    _detected_mode = "social_media"
+    if os.path.exists(_state_path):
+        try:
+            with open(_state_path, 'r', encoding='utf-8') as _sf:
+                _sd = json.load(_sf)
+                _detected_mode = _sd.get("mode", "social_media")
+        except Exception:
+            pass
+
+    if _detected_mode == "geopolitical":
+        required_files = [
+            "state.json",
+            "simulation_config.json",
+            "actor_profiles.json",
+        ]
+    else:
+        required_files = [
+            "state.json",
+            "simulation_config.json",
+            "reddit_profiles.json",
+            "twitter_profiles.csv",
+        ]
+
     # 检查文件是否存在
     existing_files = []
     missing_files = []
@@ -278,7 +300,7 @@ def _check_simulation_prepared(simulation_id: str) -> tuple:
             existing_files.append(f)
         else:
             missing_files.append(f)
-    
+
     if missing_files:
         return False, {
             "reason": "缺少必要文件",
@@ -310,9 +332,12 @@ def _check_simulation_prepared(simulation_id: str) -> tuple:
         prepared_statuses = ["ready", "preparing", "running", "completed", "stopped", "failed"]
         if status in prepared_statuses and config_generated:
             # 获取文件统计信息
-            profiles_file = os.path.join(simulation_dir, "reddit_profiles.json")
+            if _detected_mode == "geopolitical":
+                profiles_file = os.path.join(simulation_dir, "actor_profiles.json")
+            else:
+                profiles_file = os.path.join(simulation_dir, "reddit_profiles.json")
             config_file = os.path.join(simulation_dir, "simulation_config.json")
-            
+
             profiles_count = 0
             if os.path.exists(profiles_file):
                 with open(profiles_file, 'r', encoding='utf-8') as f:
@@ -1514,15 +1539,22 @@ def start_simulation():
                     "error": "max_rounds 必须是有效的整数"
                 }), 400
 
-        if platform not in ['twitter', 'reddit', 'parallel']:
+        if platform not in ['twitter', 'reddit', 'parallel', 'geopolitical']:
             return jsonify({
                 "success": False,
-                "error": f"无效的平台类型: {platform}，可选: twitter/reddit/parallel"
+                "error": f"无效的平台类型: {platform}，可选: twitter/reddit/parallel/geopolitical"
             }), 400
 
         # 检查模拟是否已准备好
         manager = SimulationManager()
         state = manager.get_simulation(simulation_id)
+
+        # Auto-detect platform from simulation mode when using default
+        if state and hasattr(state, 'mode'):
+            from ..services.simulation_manager import SimulationMode
+            if state.mode == SimulationMode.GEOPOLITICAL and platform == 'parallel':
+                platform = 'geopolitical'
+                logger.info(f"Auto-detected geopolitical mode for simulation {simulation_id}")
 
         if not state:
             return jsonify({
@@ -2213,19 +2245,19 @@ def interview_agent():
             }), 400
         
         # 验证platform参数
-        if platform and platform not in ("twitter", "reddit"):
+        if platform and platform not in ("twitter", "reddit", "geopolitical"):
             return jsonify({
                 "success": False,
-                "error": "platform 参数只能是 'twitter' 或 'reddit'"
+                "error": "platform 参数只能是 'twitter'、'reddit' 或 'geopolitical'"
             }), 400
-        
+
         # 检查环境状态
         if not SimulationRunner.check_env_alive(simulation_id):
             return jsonify({
                 "success": False,
                 "error": "模拟环境未运行或已关闭。请确保模拟已完成并进入等待命令模式。"
             }), 400
-        
+
         # 优化prompt，添加前缀避免Agent调用工具
         optimized_prompt = optimize_interview_prompt(prompt)
         

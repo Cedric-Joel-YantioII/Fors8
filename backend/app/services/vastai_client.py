@@ -68,23 +68,26 @@ class SpendingGuardrails:
 
     def __init__(self):
         import os
+        import threading
         self.max_spend_per_run = float(os.environ.get('VASTAI_MAX_SPEND_PER_RUN', '5.00'))
         self.max_instances = int(os.environ.get('VASTAI_MAX_INSTANCES', '2'))
         self.auto_destroy_minutes = int(os.environ.get('VASTAI_AUTO_DESTROY_MINUTES', '30'))
         self.max_price_per_hour = float(os.environ.get('VASTAI_MAX_PRICE_PER_HOUR', '3.00'))
         self.total_spent_session = 0.0
         self.active_instance_count = 0
+        self._lock = threading.Lock()
 
     def check_can_launch(self, dph_total: float) -> tuple:
         """Returns (allowed: bool, reason: str)."""
-        if self.active_instance_count >= self.max_instances:
-            return False, f"Max {self.max_instances} concurrent instances allowed. Destroy one first."
-        if dph_total > self.max_price_per_hour:
-            return False, f"Offer costs ${dph_total:.2f}/hr — exceeds max ${self.max_price_per_hour:.2f}/hr limit."
-        remaining_budget = self.max_spend_per_run - self.total_spent_session
-        if remaining_budget <= 0:
-            return False, f"Session budget of ${self.max_spend_per_run:.2f} exhausted. Spent: ${self.total_spent_session:.2f}."
-        return True, "OK"
+        with self._lock:
+            if self.active_instance_count >= self.max_instances:
+                return False, f"Max {self.max_instances} concurrent instances allowed. Destroy one first."
+            if dph_total > self.max_price_per_hour:
+                return False, f"Offer costs ${dph_total:.2f}/hr — exceeds max ${self.max_price_per_hour:.2f}/hr limit."
+            remaining_budget = self.max_spend_per_run - self.total_spent_session
+            if remaining_budget <= 0:
+                return False, f"Session budget of ${self.max_spend_per_run:.2f} exhausted. Spent: ${self.total_spent_session:.2f}."
+            return True, "OK"
 
     def check_should_destroy(self, instance: 'VastInstance') -> tuple:
         """Check if an instance should be auto-destroyed."""
@@ -99,11 +102,13 @@ class SpendingGuardrails:
         return False, ""
 
     def record_launch(self):
-        self.active_instance_count += 1
+        with self._lock:
+            self.active_instance_count += 1
 
     def record_destroy(self, cost: float):
-        self.active_instance_count = max(0, self.active_instance_count - 1)
-        self.total_spent_session += cost
+        with self._lock:
+            self.active_instance_count = max(0, self.active_instance_count - 1)
+            self.total_spent_session += cost
 
 
 class VastAIClient:
@@ -192,6 +197,7 @@ class VastAIClient:
         offer_id: int,
         model_name: str = "Qwen/Qwen2.5-72B-Instruct",
         label: str = "fors8-vllm",
+        offer_dph: Optional[float] = None,
     ) -> VastInstance:
         """Launch a GPU instance with vLLM serving the specified model.
 
@@ -199,6 +205,7 @@ class VastAIClient:
             offer_id: The offer ID from search_offers()
             model_name: HuggingFace model to serve
             label: Instance label for identification
+            offer_dph: Actual offer price ($/hr) for guardrail check. Falls back to max_price_per_hour if unknown.
 
         Returns:
             VastInstance with instance_id (status will be 'pending')
@@ -211,8 +218,8 @@ class VastAIClient:
         config = MODEL_GPU_CONFIGS.get(model_name, MODEL_GPU_CONFIGS["Qwen/Qwen2.5-72B-Instruct"])
 
         # GUARDRAIL: Check spending limits before launching
-        # We don't know exact dph yet, use max_price_per_hour as estimate
-        allowed, reason = self.guardrails.check_can_launch(self.guardrails.max_price_per_hour)
+        dph_estimate = offer_dph if offer_dph is not None else self.guardrails.max_price_per_hour
+        allowed, reason = self.guardrails.check_can_launch(dph_estimate)
         if not allowed:
             logger.warning(f"Launch blocked by guardrails: {reason}")
             raise RuntimeError(f"Guardrail: {reason}")
@@ -304,7 +311,19 @@ class VastAIClient:
         instance.status = data.get("actual_status", "pending")
 
         # Construct the vLLM endpoint URL
-        if instance.public_ip and 8000 in (instance.ports or [8000]):
+        # Vast.ai ports can be a dict (e.g. {"8000/tcp": [{"HostPort": "8000"}]}) or a list.
+        # We check if port 8000 is available; if ports info is missing, assume default mapping.
+        ports_data = instance.ports
+        port_8000_available = False
+        if isinstance(ports_data, dict):
+            port_8000_available = any("8000" in str(k) for k in ports_data.keys())
+        elif isinstance(ports_data, list):
+            port_8000_available = 8000 in ports_data
+        else:
+            port_8000_available = True  # Assume default if no port info
+        if not ports_data:
+            port_8000_available = True  # No port info yet, assume default mapping
+        if instance.public_ip and port_8000_available:
             instance.endpoint_url = f"http://{instance.public_ip}:8000/v1"
 
         self.instances[instance_id] = instance
@@ -380,10 +399,14 @@ class VastAIClient:
 
             time.sleep(poll_interval)
 
-        # Timeout
+        # Timeout — destroy the instance to stop billing
         instance = self.instances.get(instance_id, VastInstance(instance_id=instance_id))
         instance.status = "timeout"
-        logger.error(f"Instance {instance_id} timed out after {timeout_seconds}s")
+        logger.error(f"Instance {instance_id} timed out after {timeout_seconds}s. Destroying to stop billing.")
+        try:
+            self.destroy_instance(instance_id)
+        except Exception as e:
+            logger.error(f"Failed to destroy timed-out instance {instance_id}: {e}")
         raise TimeoutError(f"Instance {instance_id} did not become ready in {timeout_seconds}s")
 
     def destroy_instance(self, instance_id: int) -> bool:
@@ -435,7 +458,7 @@ class VastAIClient:
                     progress_callback(
                         f"Found {offer['gpu_name']} x{offer['num_gpus']} at ${offer['dph_total']:.2f}/hr. Launching (attempt {i+1})..."
                     )
-                instance = self.launch_instance(offer["id"], model_name)
+                instance = self.launch_instance(offer["id"], model_name, offer_dph=offer.get("dph_total"))
                 break
             except RuntimeError as e:
                 if "500" in str(e) or "server_error" in str(e):

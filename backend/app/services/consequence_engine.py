@@ -396,19 +396,30 @@ class ConsequenceEngine:
         res = ActionResolution()
         target_chokepoint = params.get("chokepoint", "")
 
-        if "hormuz" in target_chokepoint.lower():
+        # Normalize chokepoint: also check target actor name for context when
+        # LLM doesn't specify an explicit chokepoint string.
+        chokepoint_text = target_chokepoint.lower()
+        if not chokepoint_text and target:
+            # Infer chokepoint from target context (e.g., Iran → Hormuz)
+            chokepoint_text = target.actor_name.lower()
+
+        oil_impact_applied = False
+        if "hormuz" in chokepoint_text or ("iran" in chokepoint_text):
             res.global_changes["strait_of_hormuz_open"] = False
-            res.global_changes["oil_price"] = world_state.oil_price * r["oil_price_spike_pct"] / 100
-        elif "mandeb" in target_chokepoint.lower() or "red_sea" in target_chokepoint.lower():
+            # Only spike oil price if strait was previously open
+            if world_state.strait_of_hormuz_open:
+                res.global_changes["oil_price"] = world_state.oil_price * r["oil_price_spike_pct"] / 100
+                oil_impact_applied = True
+        elif "mandeb" in chokepoint_text or "red_sea" in chokepoint_text or "houthi" in chokepoint_text:
             res.global_changes["bab_el_mandeb_open"] = False
-        elif "suez" in target_chokepoint.lower():
+        elif "suez" in chokepoint_text:
             res.global_changes["suez_canal_open"] = False
 
         res.escalation_delta = r["escalation_increase"]
         res.global_changes["escalation_level"] = r["escalation_increase"]
         res.consequence_summary = (
             f"{actor.actor_name} imposed blockade on {target_chokepoint or 'maritime routes'}. "
-            f"Oil price impact: +{r['oil_price_spike_pct']:.0f}%"
+            f"Oil price impact: {'+' + str(int(r['oil_price_spike_pct'])) + '%' if oil_impact_applied else 'minimal (no major chokepoint affected)'}."
         )
         res.cascading_effects.append("global_shipping_disruption")
         return res

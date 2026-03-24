@@ -287,6 +287,30 @@ export default {
       ],
     }
   },
+  mounted() {
+    // Restore previously saved settings from localStorage
+    const savedProvider = localStorage.getItem('fors8_provider')
+    const savedApiKey = localStorage.getItem('fors8_api_key')
+    const savedBaseUrl = localStorage.getItem('fors8_base_url')
+    const savedModel = localStorage.getItem('fors8_model')
+    const savedVllmEndpoint = localStorage.getItem('fors8_vllm_endpoint')
+
+    if (savedProvider) {
+      this.selectedProvider = savedProvider
+      if (savedProvider === 'anthropic' || savedProvider === 'openai') {
+        if (savedApiKey) {
+          this.apiKey = savedApiKey
+          this.authMethod = 'api_key'
+        }
+        if (savedBaseUrl) this.baseUrl = savedBaseUrl
+      } else if (savedProvider === 'openrouter') {
+        if (savedApiKey) this.openrouterKey = savedApiKey
+        if (savedModel) this.selectedModel = savedModel
+      } else if (savedProvider === 'vllm') {
+        if (savedVllmEndpoint) this.vllmEndpoint = savedVllmEndpoint
+      }
+    }
+  },
   computed: {
     currentProvider() {
       return this.providers.find(p => p.id === this.selectedProvider) || {}
@@ -332,12 +356,14 @@ export default {
       alert('Saved')
     },
     saveOpenRouterKey() {
+      localStorage.setItem('fors8_provider', 'openrouter')
       localStorage.setItem('fors8_api_key', this.openrouterKey)
       localStorage.setItem('fors8_base_url', 'https://openrouter.ai/api/v1')
       localStorage.setItem('fors8_model', this.selectedModel)
       alert('Saved')
     },
     provisionGpus() {
+      localStorage.setItem('fors8_provider', 'vllm')
       if (this.vllmEndpoint) {
         localStorage.setItem('fors8_vllm_endpoint', this.vllmEndpoint)
         alert('Connected')

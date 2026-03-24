@@ -188,14 +188,24 @@ class ChatGPTAuthManager:
 
         # Start local callback server
         _OAuthCallbackHandler.authorization_code = None
-        server = HTTPServer(("localhost", OAUTH_REDIRECT_PORT), _OAuthCallbackHandler)
+        try:
+            server = HTTPServer(("localhost", OAUTH_REDIRECT_PORT), _OAuthCallbackHandler)
+        except OSError as e:
+            logger.error(f"Cannot start OAuth callback server on port {OAUTH_REDIRECT_PORT}: {e}. "
+                         f"Is another instance running?")
+            return None
         server.timeout = 120  # 2 minute timeout
 
         logger.info(f"Opening browser for ChatGPT login...")
         webbrowser.open(auth_url)
 
-        # Wait for callback
+        # Wait for callback with a deadline to prevent infinite loop
+        deadline = time.time() + 300  # 5 minute overall deadline
         while _OAuthCallbackHandler.authorization_code is None:
+            if time.time() > deadline:
+                logger.error("OAuth login timed out after 5 minutes")
+                server.server_close()
+                return None
             server.handle_request()
             if _OAuthCallbackHandler.authorization_code:
                 break
@@ -378,7 +388,14 @@ class ChatGPTAuthManager:
 
         with open(path, 'w') as f:
             json.dump(session.to_dict(), f, indent=2)
-        os.chmod(path, 0o600)  # Owner read/write only
+
+        # Restrict file permissions — owner read/write only
+        try:
+            os.chmod(path, 0o600)
+        except OSError:
+            # os.chmod with Unix modes may not work on Windows;
+            # the file is still saved, just without restricted permissions.
+            logger.debug(f"Could not set file permissions on {path} (expected on Windows)")
 
         logger.info(f"Session saved to {path}")
 

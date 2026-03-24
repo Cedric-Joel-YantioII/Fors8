@@ -16,6 +16,7 @@ and topic_classification (LLM-classified).
 
 import json
 import logging
+import os
 import time
 import re
 import hashlib
@@ -160,6 +161,14 @@ class SocialMediaScraper:
                 timeout=10,
             )
 
+            if user_resp.status_code == 401:
+                logger.error(f"Twitter bearer token is invalid or expired (401 Unauthorized)")
+                self.twitter_bearer_token = None  # Disable further attempts with bad token
+                return []
+            if user_resp.status_code == 429:
+                retry_after = user_resp.headers.get("Retry-After", "60")
+                logger.warning(f"Twitter rate limited for {handle}. Retry after {retry_after}s")
+                return []
             if user_resp.status_code != 200:
                 logger.error(f"Twitter user lookup failed for {handle}: {user_resp.status_code}")
                 return []
@@ -241,12 +250,22 @@ class SocialMediaScraper:
             return []
 
         try:
+            int(self.telegram_api_id)
+        except (ValueError, TypeError):
+            logger.error(f"Telegram API ID must be numeric, got: {self.telegram_api_id!r}")
+            return []
+
+        try:
             from telethon.sync import TelegramClient
             from telethon.tl.functions.messages import GetHistoryRequest
 
             posts = []
 
-            with TelegramClient('scraper_session', int(self.telegram_api_id), self.telegram_api_hash) as client:
+            import tempfile
+            session_dir = os.path.join(os.path.expanduser("~"), ".mirofish")
+            os.makedirs(session_dir, exist_ok=True)
+            session_path = os.path.join(session_dir, "telegram_scraper_session")
+            with TelegramClient(session_path, int(self.telegram_api_id), self.telegram_api_hash) as client:
                 channel = client.get_entity(account.account_id)
                 messages = client.get_messages(channel, limit=limit)
 
@@ -284,9 +303,12 @@ class SocialMediaScraper:
             import feedparser
 
             feed = feedparser.parse(account.account_id)
+            if feed.bozo and not feed.entries:
+                logger.warning(f"RSS feed returned malformed data for {account.account_id}: {feed.bozo_exception}")
+                return []
             posts = []
 
-            for entry in feed.entries[:max_entries]:
+            for entry in getattr(feed, 'entries', [])[:max_entries]:
                 content = entry.get("summary", entry.get("description", ""))
                 # Strip HTML tags
                 content = re.sub(r'<[^>]+>', '', content)
@@ -334,10 +356,16 @@ class SocialMediaScraper:
             return []
 
     def scrape_all(self) -> Dict[str, List[ScrapedPost]]:
-        """Scrape all configured accounts. Returns actor_id -> posts mapping."""
+        """Scrape all configured accounts. Returns actor_id -> posts mapping.
+
+        Includes a small delay between accounts to avoid hammering APIs.
+        """
         results: Dict[str, List[ScrapedPost]] = {}
 
-        for account in self.accounts:
+        for i, account in enumerate(self.accounts):
+            # Rate limit: 1 second delay between accounts to avoid API abuse
+            if i > 0:
+                time.sleep(1)
             posts = self.scrape_account(account)
             if posts:
                 if account.actor_id not in results:

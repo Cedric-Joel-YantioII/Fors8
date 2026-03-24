@@ -15,6 +15,7 @@ Each adapter outputs data compatible with DataIngestor.
 import json
 import logging
 import hashlib
+import html
 import os
 import re
 from datetime import datetime, timedelta
@@ -384,7 +385,7 @@ class YouTubeScraper:
 
                     for entry_xml in entries[:max_results]:
                         video_id_match = rss_re.search(r'<yt:videoId>(.*?)</yt:videoId>', entry_xml)
-                        title_match = rss_re.search(r'<title>(.*?)</title>', entry_xml)
+                        title_match = rss_re.search(r'<title>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?</title>', entry_xml)
                         published_match = rss_re.search(r'<published>(.*?)</published>', entry_xml)
 
                         if not video_id_match:
@@ -394,7 +395,7 @@ class YouTubeScraper:
                         if video_id in self._seen_video_ids:
                             continue
 
-                        title = title_match.group(1) if title_match else ""
+                        title = html.unescape(title_match.group(1)) if title_match else ""
 
                         # Filter by query keywords
                         query_lower = query.lower()
@@ -591,7 +592,7 @@ class NewsWebsiteScraper:
                         if not title_m:
                             continue
 
-                        title = title_m.group(1)
+                        title = html.unescape(title_m.group(1))
                         text_lower = title.lower()
 
                         if not any(kw in text_lower for kw in keywords):
@@ -672,7 +673,7 @@ class GoogleNewsScraper:
                 # Parse RSS XML
                 items = re.findall(r'<item>(.*?)</item>', resp.text, re.DOTALL)
                 for item_xml in items[:max_per_topic]:
-                    title_m = re.search(r'<title>(.*?)</title>', item_xml)
+                    title_m = re.search(r'<title>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?</title>', item_xml)
                     link_m = re.search(r'<link>(.*?)</link>', item_xml)
                     pubdate_m = re.search(r'<pubDate>(.*?)</pubDate>', item_xml)
                     source_m = re.search(r'<source[^>]*>(.*?)</source>', item_xml)
@@ -685,7 +686,7 @@ class GoogleNewsScraper:
                         continue
 
                     results.append({
-                        "title": title_m.group(1),
+                        "title": html.unescape(title_m.group(1)),
                         "source": source_m.group(1) if source_m else "Google News",
                         "url": link,
                         "timestamp": pubdate_m.group(1) if pubdate_m else "",
@@ -998,102 +999,75 @@ class OSINTManager:
             ]
 
     def fetch_all(self, query: str = "Iran Israel war 2026") -> Dict[str, Any]:
-        """Fetch from all configured OSINT sources."""
+        """Fetch from all configured OSINT sources.
+
+        Each scraper is wrapped in try/except so a single failure
+        does not prevent the remaining sources from being fetched.
+        """
         results = {
             "timestamp": datetime.now().isoformat(),
             "sources": {},
         }
 
         # GDELT — free, no API key needed
-        gdelt_articles = self.gdelt.fetch_events(query=query)
-        results["sources"]["gdelt"] = {
-            "count": len(gdelt_articles),
-            "articles": gdelt_articles,
-        }
-        if self.data_ingestor and gdelt_articles:
-            for article in gdelt_articles:
-                self.data_ingestor.ingest_news_article(
-                    title=article.get("title", ""),
-                    content=article.get("title", ""),
-                    source=article.get("source", "GDELT"),
-                    timestamp=article.get("timestamp", ""),
-                    url=article.get("url"),
-                )
+        try:
+            gdelt_articles = self.gdelt.fetch_events(query=query)
+            results["sources"]["gdelt"] = {
+                "count": len(gdelt_articles),
+                "articles": gdelt_articles,
+            }
+            if self.data_ingestor and gdelt_articles:
+                for article in gdelt_articles:
+                    self.data_ingestor.ingest_news_article(
+                        title=article.get("title", ""),
+                        content=article.get("title", ""),
+                        source=article.get("source", "GDELT"),
+                        timestamp=article.get("timestamp", ""),
+                        url=article.get("url"),
+                    )
+        except Exception as e:
+            logger.error(f"GDELT scraper crashed in fetch_all: {e}")
+            results["sources"]["gdelt"] = {"error": str(e)}
 
         # Oil prices
-        oil_data = self.oil_prices.fetch_prices()
-        results["sources"]["oil_prices"] = oil_data
+        try:
+            oil_data = self.oil_prices.fetch_prices()
+            results["sources"]["oil_prices"] = oil_data
+        except Exception as e:
+            logger.error(f"Oil price scraper crashed in fetch_all: {e}")
+            results["sources"]["oil_prices"] = {"error": str(e)}
 
         # YouTube — free via RSS, or API if key provided
-        yt_videos = self.youtube.fetch_recent_videos(query=query)
-        results["sources"]["youtube"] = {
-            "count": len(yt_videos),
-            "videos": yt_videos,
-        }
-        if self.data_ingestor and yt_videos:
-            for video in yt_videos:
-                # Use transcript if available, otherwise title+description
-                content = video.get("transcript") or video.get("description") or video.get("title", "")
-                self.data_ingestor.ingest_news_article(
-                    title=f"[YouTube/{video.get('channel_name', '')}] {video.get('title', '')}",
-                    content=content,
-                    source=f"YouTube - {video.get('channel_name', '')}",
-                    timestamp=video.get("published_at", ""),
-                    url=video.get("url"),
-                )
+        try:
+            yt_videos = self.youtube.fetch_recent_videos(query=query)
+            results["sources"]["youtube"] = {
+                "count": len(yt_videos),
+                "videos": yt_videos,
+            }
+            if self.data_ingestor and yt_videos:
+                for video in yt_videos:
+                    # Use transcript if available, otherwise title+description
+                    content = video.get("transcript") or video.get("description") or video.get("title", "")
+                    self.data_ingestor.ingest_news_article(
+                        title=f"[YouTube/{video.get('channel_name', '')}] {video.get('title', '')}",
+                        content=content,
+                        source=f"YouTube - {video.get('channel_name', '')}",
+                        timestamp=video.get("published_at", ""),
+                        url=video.get("url"),
+                    )
+        except Exception as e:
+            logger.error(f"YouTube scraper crashed in fetch_all: {e}")
+            results["sources"]["youtube"] = {"error": str(e)}
 
         # News website RSS feeds — free, no API key needed
-        news_articles = self.news_websites.fetch_articles()
-        results["sources"]["news_websites"] = {
-            "count": len(news_articles),
-            "articles": news_articles,
-        }
-        if self.data_ingestor and news_articles:
-            for article in news_articles:
-                self.data_ingestor.ingest_news_article(
-                    title=article.get("title", ""),
-                    content=article.get("content", ""),
-                    source=article.get("source", ""),
-                    timestamp=article.get("timestamp", ""),
-                    url=article.get("url"),
-                )
-
-        # Google News RSS — free, no key
-        gn_articles = self.google_news.fetch_articles()
-        results["sources"]["google_news"] = {"count": len(gn_articles)}
-        if self.data_ingestor and gn_articles:
-            for article in gn_articles:
-                self.data_ingestor.ingest_news_article(
-                    title=article.get("title", ""),
-                    content=article.get("title", ""),  # Google News RSS only has titles
-                    source=article.get("source", "Google News"),
-                    timestamp=article.get("timestamp", ""),
-                    url=article.get("url"),
-                )
-
-        # Wikipedia Current Events — free, no key
-        wiki = self.wikipedia.fetch_today()
-        if wiki:
-            results["sources"]["wikipedia"] = {"fetched": True}
-            if self.data_ingestor:
-                self.data_ingestor.ingest_document(
-                    text=wiki["content"],
-                    source_name="Wikipedia Current Events",
-                    category="news_article",
-                    credibility="institutional",
-                    timestamp=wiki["timestamp"],
-                )
-
-        # NewsAPI.org — free key, 100 req/day
-        if self.news_api:
-            api_articles = self.news_api.fetch_articles(
-                query=query,
-                sources="al-jazeera-english,reuters,associated-press",
-                page_size=20,
-            )
-            results["sources"]["news_api"] = {"count": len(api_articles)}
-            if self.data_ingestor:
-                for article in api_articles:
+        try:
+            news_articles = self.news_websites.fetch_articles()
+            results["sources"]["news_websites"] = {
+                "count": len(news_articles),
+                "articles": news_articles,
+            }
+            if self.data_ingestor and news_articles:
+                for article in news_articles:
                     self.data_ingestor.ingest_news_article(
                         title=article.get("title", ""),
                         content=article.get("content", ""),
@@ -1101,62 +1075,137 @@ class OSINTManager:
                         timestamp=article.get("timestamp", ""),
                         url=article.get("url"),
                     )
+        except Exception as e:
+            logger.error(f"News website scraper crashed in fetch_all: {e}")
+            results["sources"]["news_websites"] = {"error": str(e)}
+
+        # Google News RSS — free, no key
+        try:
+            gn_articles = self.google_news.fetch_articles()
+            results["sources"]["google_news"] = {"count": len(gn_articles)}
+            if self.data_ingestor and gn_articles:
+                for article in gn_articles:
+                    self.data_ingestor.ingest_news_article(
+                        title=article.get("title", ""),
+                        content=article.get("title", ""),  # Google News RSS only has titles
+                        source=article.get("source", "Google News"),
+                        timestamp=article.get("timestamp", ""),
+                        url=article.get("url"),
+                    )
+        except Exception as e:
+            logger.error(f"Google News scraper crashed in fetch_all: {e}")
+            results["sources"]["google_news"] = {"error": str(e)}
+
+        # Wikipedia Current Events — free, no key
+        try:
+            wiki = self.wikipedia.fetch_today()
+            if wiki:
+                results["sources"]["wikipedia"] = {"fetched": True}
+                if self.data_ingestor:
+                    self.data_ingestor.ingest_document(
+                        text=wiki["content"],
+                        source_name="Wikipedia Current Events",
+                        category="news_article",
+                        credibility="institutional",
+                        timestamp=wiki["timestamp"],
+                    )
+        except Exception as e:
+            logger.error(f"Wikipedia scraper crashed in fetch_all: {e}")
+            results["sources"]["wikipedia"] = {"error": str(e)}
+
+        # NewsAPI.org — free key, 100 req/day
+        if self.news_api:
+            try:
+                api_articles = self.news_api.fetch_articles(
+                    query=query,
+                    sources="al-jazeera-english,reuters,associated-press",
+                    page_size=20,
+                )
+                results["sources"]["news_api"] = {"count": len(api_articles)}
+                if self.data_ingestor:
+                    for article in api_articles:
+                        self.data_ingestor.ingest_news_article(
+                            title=article.get("title", ""),
+                            content=article.get("content", ""),
+                            source=article.get("source", ""),
+                            timestamp=article.get("timestamp", ""),
+                            url=article.get("url"),
+                        )
+            except Exception as e:
+                logger.error(f"NewsAPI scraper crashed in fetch_all: {e}")
+                results["sources"]["news_api"] = {"error": str(e)}
 
         # NewsData.io — free key, 200 credits/day
         if self.newsdata:
-            nd_articles = self.newsdata.fetch_articles(query=query)
-            results["sources"]["newsdata"] = {"count": len(nd_articles)}
-            if self.data_ingestor:
-                for article in nd_articles:
-                    self.data_ingestor.ingest_news_article(
-                        title=article.get("title", ""),
-                        content=article.get("content", ""),
-                        source=article.get("source", "NewsData.io"),
-                        timestamp=article.get("timestamp", ""),
-                        url=article.get("url"),
-                    )
+            try:
+                nd_articles = self.newsdata.fetch_articles(query=query)
+                results["sources"]["newsdata"] = {"count": len(nd_articles)}
+                if self.data_ingestor:
+                    for article in nd_articles:
+                        self.data_ingestor.ingest_news_article(
+                            title=article.get("title", ""),
+                            content=article.get("content", ""),
+                            source=article.get("source", "NewsData.io"),
+                            timestamp=article.get("timestamp", ""),
+                            url=article.get("url"),
+                        )
+            except Exception as e:
+                logger.error(f"NewsData.io scraper crashed in fetch_all: {e}")
+                results["sources"]["newsdata"] = {"error": str(e)}
 
         # GNews.io — free key, 100 req/day
         if self.gnews:
-            gn_api_articles = self.gnews.fetch_articles(query=query)
-            results["sources"]["gnews"] = {"count": len(gn_api_articles)}
-            if self.data_ingestor:
-                for article in gn_api_articles:
-                    self.data_ingestor.ingest_news_article(
-                        title=article.get("title", ""),
-                        content=article.get("content", ""),
-                        source=article.get("source", "GNews"),
-                        timestamp=article.get("timestamp", ""),
-                        url=article.get("url"),
-                    )
+            try:
+                gn_api_articles = self.gnews.fetch_articles(query=query)
+                results["sources"]["gnews"] = {"count": len(gn_api_articles)}
+                if self.data_ingestor:
+                    for article in gn_api_articles:
+                        self.data_ingestor.ingest_news_article(
+                            title=article.get("title", ""),
+                            content=article.get("content", ""),
+                            source=article.get("source", "GNews"),
+                            timestamp=article.get("timestamp", ""),
+                            url=article.get("url"),
+                        )
+            except Exception as e:
+                logger.error(f"GNews scraper crashed in fetch_all: {e}")
+                results["sources"]["gnews"] = {"error": str(e)}
 
         # Mediastack — free key, 100 req/month
         if self.mediastack:
-            ms_articles = self.mediastack.fetch_articles()
-            results["sources"]["mediastack"] = {"count": len(ms_articles)}
-            if self.data_ingestor:
-                for article in ms_articles:
-                    self.data_ingestor.ingest_news_article(
-                        title=article.get("title", ""),
-                        content=article.get("content", ""),
-                        source=article.get("source", "Mediastack"),
-                        timestamp=article.get("timestamp", ""),
-                        url=article.get("url"),
-                    )
+            try:
+                ms_articles = self.mediastack.fetch_articles()
+                results["sources"]["mediastack"] = {"count": len(ms_articles)}
+                if self.data_ingestor:
+                    for article in ms_articles:
+                        self.data_ingestor.ingest_news_article(
+                            title=article.get("title", ""),
+                            content=article.get("content", ""),
+                            source=article.get("source", "Mediastack"),
+                            timestamp=article.get("timestamp", ""),
+                            url=article.get("url"),
+                        )
+            except Exception as e:
+                logger.error(f"Mediastack scraper crashed in fetch_all: {e}")
+                results["sources"]["mediastack"] = {"error": str(e)}
 
         # ACLED — free account, structured conflict event data
         if self.acled:
             for country in ["Iran", "Israel", "Lebanon", "Yemen", "Iraq"]:
-                events = self.acled.fetch_events(country=country, days_back=7)
-                results["sources"][f"acled_{country.lower()}"] = {"count": len(events)}
-                if self.data_ingestor and events:
-                    from .data_ingestor import DataCategory, SourceCredibility
-                    self.data_ingestor.ingest_json(
-                        data=events,
-                        source_name=f"ACLED_{country}",
-                        category=DataCategory.MILITARY_ACTION,
-                        credibility=SourceCredibility.INSTITUTIONAL,
-                    )
+                try:
+                    events = self.acled.fetch_events(country=country, days_back=7)
+                    results["sources"][f"acled_{country.lower()}"] = {"count": len(events)}
+                    if self.data_ingestor and events:
+                        from .data_ingestor import DataCategory, SourceCredibility
+                        self.data_ingestor.ingest_json(
+                            data=events,
+                            source_name=f"ACLED_{country}",
+                            category=DataCategory.MILITARY_ACTION,
+                            credibility=SourceCredibility.INSTITUTIONAL,
+                        )
+                except Exception as e:
+                    logger.error(f"ACLED scraper crashed for {country} in fetch_all: {e}")
+                    results["sources"][f"acled_{country.lower()}"] = {"error": str(e)}
 
         return results
 

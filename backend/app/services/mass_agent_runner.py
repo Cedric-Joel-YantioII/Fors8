@@ -196,11 +196,17 @@ class MassAgentRunner:
 
                 return decision
 
-        # Run all agents concurrently
+        # Run agents in batches to limit memory usage with 100K+ agents.
+        # Each batch is fully concurrent (up to semaphore limit), but we don't
+        # schedule all 100K coroutines into memory at once.
+        BATCH_SIZE = 5000
         connector = aiohttp.TCPConnector(limit=self.max_concurrent, force_close=False)
         async with aiohttp.ClientSession(connector=connector) as session:
-            tasks = [process_agent(session, agent) for agent in agents]
-            results = await asyncio.gather(*tasks)
+            for batch_start in range(0, len(agents), BATCH_SIZE):
+                batch = agents[batch_start:batch_start + BATCH_SIZE]
+                tasks = [process_agent(session, agent) for agent in batch]
+                batch_results = await asyncio.gather(*tasks)
+                results.extend(batch_results)
 
         if progress_callback:
             progress_callback(total, total)
@@ -291,11 +297,12 @@ class MassAgentRunner:
     ) -> List[AgentDecision]:
         """Synchronous wrapper for run_round — call this from non-async code."""
         try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                # Already in async context — use sync fallback
-                return self._run_round_sync(agents, situation_json, available_actions, temperature, max_tokens, progress_callback)
+            loop = asyncio.get_running_loop()
+            # Already in async context — use sync fallback since asyncio.run()
+            # would raise "cannot be called from a running event loop"
+            return self._run_round_sync(agents, situation_json, available_actions, temperature, max_tokens, progress_callback)
         except RuntimeError:
+            # No running loop — safe to use asyncio.run()
             pass
 
         return asyncio.run(self.run_round(
@@ -306,7 +313,10 @@ class MassAgentRunner:
     def health_check(self) -> Dict[str, Any]:
         """Check if the endpoint is responding. Supports both vLLM and Ollama."""
         import requests
-        base = self.endpoint_url.rstrip('/v1').rstrip('/')
+        base = self.endpoint_url
+        if base.endswith('/v1'):
+            base = base[:-3]
+        base = base.rstrip('/')
 
         # Try Ollama format first (/api/tags)
         try:

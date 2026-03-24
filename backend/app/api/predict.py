@@ -6,6 +6,7 @@ GET  /api/predict/:id    — Get prediction status and results
 """
 
 import os
+import re
 import traceback
 from flask import request, jsonify, Blueprint
 
@@ -35,8 +36,11 @@ def start_prediction():
             return jsonify({"error": "No question provided"}), 400
 
         # Get config — re-read .env every time in case endpoint changed
-        from dotenv import load_dotenv
-        load_dotenv(os.path.join(os.path.dirname(__file__), '../../../.env'), override=True)
+        try:
+            from dotenv import load_dotenv
+            load_dotenv(os.path.join(os.path.dirname(__file__), '../../../.env'), override=True)
+        except ImportError:
+            pass  # dotenv not installed; rely on existing environment variables
 
         vllm_endpoint = request.form.get('vllm_endpoint', '') or os.environ.get('VLLM_ENDPOINT', '')
         model_name = request.form.get('model_name', '') or os.environ.get('VLLM_MODEL', 'qwen2.5:72b')
@@ -44,20 +48,38 @@ def start_prediction():
         logger.info(f"Predict request: question='{question[:50]}...' endpoint={vllm_endpoint} model={model_name}")
 
         # Handle file uploads (ingest into data pipeline)
+        MAX_FILE_SIZE = 50 * 1024 * 1024  # 50 MB
+        MAX_FILES = 10
+        ALLOWED_EXTENSIONS = {'.pdf', '.md', '.txt', '.doc', '.docx', '.png', '.jpg', '.jpeg'}
+
         uploaded_files = request.files.getlist('files')
         if uploaded_files:
             from ..services.data_ingestor import DataIngestor, DataCategory, SourceCredibility
             ingestor = DataIngestor()
-            for f in uploaded_files:
-                if f.filename:
-                    content = f.read().decode('utf-8', errors='replace')
-                    ingestor.ingest_document(
-                        text=content,
-                        source_name=f.filename,
-                        category=DataCategory.INTELLIGENCE_REPORT,
-                        credibility=SourceCredibility.INSTITUTIONAL,
-                    )
-                    logger.info(f"Ingested uploaded file: {f.filename}")
+            for f in uploaded_files[:MAX_FILES]:
+                if not f.filename:
+                    continue
+                # Sanitize filename: strip path traversal components
+                safe_name = os.path.basename(f.filename)
+                safe_name = re.sub(r'[^\w.\-]', '_', safe_name)
+                # Validate extension
+                _, ext = os.path.splitext(safe_name)
+                if ext.lower() not in ALLOWED_EXTENSIONS:
+                    logger.warning(f"Rejected upload with disallowed extension: {safe_name}")
+                    continue
+                # Read with size limit
+                content_bytes = f.read(MAX_FILE_SIZE + 1)
+                if len(content_bytes) > MAX_FILE_SIZE:
+                    logger.warning(f"Rejected oversized upload: {safe_name}")
+                    continue
+                content = content_bytes.decode('utf-8', errors='replace')
+                ingestor.ingest_document(
+                    text=content,
+                    source_name=safe_name,
+                    category=DataCategory.INTELLIGENCE_REPORT,
+                    credibility=SourceCredibility.INSTITUTIONAL,
+                )
+                logger.info(f"Ingested uploaded file: {safe_name}")
 
         # Create prediction job (runs in background thread)
         job = create_prediction(
@@ -91,6 +113,10 @@ def get_prediction(prediction_id: str):
     - actor_results: Per-actor stats (when complete)
     - answers: Narrative answers (when complete)
     """
+    # Validate prediction_id format (expected: UUID or alphanumeric identifier)
+    if not prediction_id or not re.match(r'^[a-zA-Z0-9_\-]{1,64}$', prediction_id):
+        return jsonify({"error": "Invalid prediction ID"}), 400
+
     job = get_job(prediction_id)
     if not job:
         return jsonify({"error": "Prediction not found"}), 404

@@ -80,12 +80,28 @@ class PredictionJob:
         }
 
 
-# In-memory job store
+# In-memory job store (bounded to prevent memory leaks)
+_MAX_JOBS = 100
 _jobs: Dict[str, PredictionJob] = {}
 
 
 def get_job(prediction_id: str) -> Optional[PredictionJob]:
     return _jobs.get(prediction_id)
+
+
+def _evict_old_jobs():
+    """Remove oldest completed/failed jobs when store exceeds max size."""
+    if len(_jobs) <= _MAX_JOBS:
+        return
+    # Sort by created_at, remove oldest completed/failed jobs first
+    completed = [
+        (pid, job) for pid, job in _jobs.items()
+        if job.status in ("complete", "failed")
+    ]
+    completed.sort(key=lambda x: x[1].created_at)
+    to_remove = len(_jobs) - _MAX_JOBS
+    for pid, _ in completed[:to_remove]:
+        del _jobs[pid]
 
 
 def create_prediction(
@@ -110,6 +126,7 @@ def create_prediction(
         vllm_endpoint=vllm_endpoint,
     )
 
+    _evict_old_jobs()
     _jobs[job.prediction_id] = job
 
     # Run the pipeline in a background thread
@@ -254,7 +271,10 @@ def _run_pipeline(job: PredictionJob):
             # Run rounds
             for round_num in range(1, job.rounds_per_run + 1):
                 ws.round_num = round_num
-                ws.simulated_time = f"2026-03-{22 + round_num}T00:00:00Z"
+                from datetime import timedelta
+                base_date = datetime(2026, 3, 22)
+                sim_date = base_date + timedelta(days=round_num)
+                ws.simulated_time = sim_date.strftime("%Y-%m-%dT00:00:00Z")
 
                 # Check termination
                 should_stop, reason = ce.check_termination(ws, job.rounds_per_run)
@@ -391,11 +411,14 @@ Answer the question directly and specifically based on the simulation data. Incl
 
         # Destroy Vast.ai instance if we provisioned one
         if vastai_client and job.vast_instance_id:
-            job.progress_message = "Tearing down GPU instance..."
-            vastai_client.destroy_instance(job.vast_instance_id)
-            instance = vastai_client.instances.get(job.vast_instance_id)
-            if instance:
-                job.gpu_cost = instance.total_cost
+            try:
+                job.progress_message = "Tearing down GPU instance..."
+                vastai_client.destroy_instance(job.vast_instance_id)
+                instance = vastai_client.instances.get(job.vast_instance_id)
+                if instance:
+                    job.gpu_cost = instance.total_cost
+            except Exception as destroy_err:
+                logger.error(f"Failed to destroy instance {job.vast_instance_id} after success: {destroy_err}")
 
         logger.info(f"Prediction {job.prediction_id} complete. GPU cost: ${job.gpu_cost:.2f}")
 
@@ -406,9 +429,12 @@ Answer the question directly and specifically based on the simulation data. Incl
         job.error = str(e)
         job.progress_message = f"Failed: {str(e)}"
 
-        # Cleanup GPU on failure
-        if vastai_client and job.vast_instance_id:
-            try:
-                vastai_client.destroy_instance(job.vast_instance_id)
-            except Exception:
-                pass
+        # Cleanup GPU on failure — destroy all instances tracked by the client,
+        # not just job.vast_instance_id, because the instance may have been
+        # launched but its ID not yet recorded on the job (e.g., timeout during wait_until_ready).
+        if vastai_client:
+            for inst_id in list(vastai_client.instances.keys()):
+                try:
+                    vastai_client.destroy_instance(inst_id)
+                except Exception:
+                    logger.error(f"Failed to destroy leaked instance {inst_id} during error cleanup")

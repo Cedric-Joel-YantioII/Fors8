@@ -324,11 +324,9 @@ class ZepGraphMemoryUpdater:
         # 活动队列
         self._activity_queue: Queue = Queue()
         
-        # 按平台分组的活动缓冲区（每个平台各自累积到BATCH_SIZE后批量发送）
-        self._platform_buffers: Dict[str, List[AgentActivity]] = {
-            'twitter': [],
-            'reddit': [],
-        }
+        # 按平台/域分组的活动缓冲区（每个平台各自累积到BATCH_SIZE后批量发送）
+        # New entries are created dynamically for any domain (military, diplomatic, etc.)
+        self._platform_buffers: Dict[str, List[AgentActivity]] = {}
         self._buffer_lock = threading.Lock()
         
         # 控制标志
@@ -412,25 +410,37 @@ class ZepGraphMemoryUpdater:
     def add_activity_from_dict(self, data: Dict[str, Any], platform: str):
         """
         从字典数据添加活动
-        
+
         Args:
             data: 从actions.jsonl解析的字典数据
-            platform: 平台名称 (twitter/reddit)
+            platform: 平台名称 (twitter/reddit/geopolitical)
         """
-        # 跳过事件类型的条目
-        if "event_type" in data:
+        # 跳过事件类型的条目 (social media uses "event_type", geopolitical uses "type")
+        if "event_type" in data or "type" in data:
             return
-        
+
+        # Build action_args: for geopolitical actions that store fields at top level,
+        # package them into action_args for the episode text generator
+        action_args = data.get("action_args", {})
+        if not action_args and data.get("action_domain"):
+            # Geopolitical log format — fields are at top level
+            action_args = {
+                "target_name": data.get("target", ""),
+                "consequence": data.get("consequence", ""),
+                "reasoning": data.get("reasoning", ""),
+                "statement": data.get("statement", ""),
+            }
+
         activity = AgentActivity(
-            platform=platform,
-            agent_id=data.get("agent_id", 0),
-            agent_name=data.get("agent_name", ""),
+            platform=data.get("action_domain", platform),
+            agent_id=data.get("agent_id", data.get("actor_id", 0)),
+            agent_name=data.get("agent_name", data.get("actor", "")),
             action_type=data.get("action_type", ""),
-            action_args=data.get("action_args", {}),
+            action_args=action_args,
             round_num=data.get("round", 0),
             timestamp=data.get("timestamp", datetime.now().isoformat()),
         )
-        
+
         self.add_activity(activity)
     
     def _worker_loop(self):

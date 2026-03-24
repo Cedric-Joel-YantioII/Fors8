@@ -530,20 +530,23 @@ class SimulationRunner:
     def _monitor_simulation(cls, simulation_id: str):
         """监控模拟进程，解析动作日志"""
         sim_dir = os.path.join(cls.RUN_STATE_DIR, simulation_id)
-        
+
         # 新的日志结构：分平台的动作日志
         twitter_actions_log = os.path.join(sim_dir, "twitter", "actions.jsonl")
         reddit_actions_log = os.path.join(sim_dir, "reddit", "actions.jsonl")
-        
+        # Geopolitical simulation writes to a single file in the root
+        geo_actions_log = os.path.join(sim_dir, "geopolitical_actions.jsonl")
+
         process = cls._processes.get(simulation_id)
         state = cls.get_run_state(simulation_id)
-        
+
         if not process or not state:
             return
-        
+
         twitter_position = 0
         reddit_position = 0
-        
+        geo_position = 0
+
         try:
             while process.poll() is None:  # 进程仍在运行
                 # 读取 Twitter 动作日志
@@ -551,22 +554,30 @@ class SimulationRunner:
                     twitter_position = cls._read_action_log(
                         twitter_actions_log, twitter_position, state, "twitter"
                     )
-                
+
                 # 读取 Reddit 动作日志
                 if os.path.exists(reddit_actions_log):
                     reddit_position = cls._read_action_log(
                         reddit_actions_log, reddit_position, state, "reddit"
                     )
-                
+
+                # 读取 Geopolitical 动作日志
+                if os.path.exists(geo_actions_log):
+                    geo_position = cls._read_action_log(
+                        geo_actions_log, geo_position, state, "geopolitical"
+                    )
+
                 # 更新状态
                 cls._save_run_state(state)
                 time.sleep(2)
-            
+
             # 进程结束后，最后读取一次日志
             if os.path.exists(twitter_actions_log):
                 cls._read_action_log(twitter_actions_log, twitter_position, state, "twitter")
             if os.path.exists(reddit_actions_log):
                 cls._read_action_log(reddit_actions_log, reddit_position, state, "reddit")
+            if os.path.exists(geo_actions_log):
+                cls._read_action_log(geo_actions_log, geo_position, state, "geopolitical")
             
             # 进程结束
             exit_code = process.returncode
@@ -663,9 +674,9 @@ class SimulationRunner:
                             action_data = json.loads(line)
                             
                             # 处理事件类型的条目
-                            if "event_type" in action_data:
-                                event_type = action_data.get("event_type")
-                                
+                            # Social media logs use "event_type", geopolitical logs use "type"
+                            event_type = action_data.get("event_type") or action_data.get("type")
+                            if event_type:
                                 # 检测 simulation_end 事件，标记平台已完成
                                 if event_type == "simulation_end":
                                     if platform == "twitter":
@@ -676,21 +687,21 @@ class SimulationRunner:
                                         state.reddit_completed = True
                                         state.reddit_running = False
                                         logger.info(f"Reddit 模拟已完成: {state.simulation_id}, total_rounds={action_data.get('total_rounds')}, total_actions={action_data.get('total_actions')}")
-                                    
+                                    elif platform == "geopolitical":
+                                        logger.info(f"Geopolitical 模拟已完成: {state.simulation_id}, final_round={action_data.get('final_round')}, total_events={action_data.get('total_events')}")
+
                                     # 检查是否所有启用的平台都已完成
-                                    # 如果只运行了一个平台，只检查那个平台
-                                    # 如果运行了两个平台，需要两个都完成
                                     all_completed = cls._check_all_platforms_completed(state)
                                     if all_completed:
                                         state.runner_status = RunnerStatus.COMPLETED
                                         state.completed_at = datetime.now().isoformat()
                                         logger.info(f"所有平台模拟已完成: {state.simulation_id}")
-                                
-                                # 更新轮次信息（从 round_end 事件）
-                                elif event_type == "round_end":
+
+                                # 更新轮次信息（从 round_end / round_complete 事件）
+                                elif event_type in ("round_end", "round_complete"):
                                     round_num = action_data.get("round", 0)
                                     simulated_hours = action_data.get("simulated_hours", 0)
-                                    
+
                                     # 更新各平台独立的轮次和时间
                                     if platform == "twitter":
                                         if round_num > state.twitter_current_round:
@@ -700,32 +711,36 @@ class SimulationRunner:
                                         if round_num > state.reddit_current_round:
                                             state.reddit_current_round = round_num
                                         state.reddit_simulated_hours = simulated_hours
-                                    
+
                                     # 总体轮次取两个平台的最大值
                                     if round_num > state.current_round:
                                         state.current_round = round_num
-                                    # 总体时间取两个平台的最大值
-                                    state.simulated_hours = max(state.twitter_simulated_hours, state.reddit_simulated_hours)
-                                
+                                    # 总体时间取两个平台的最大值（geopolitical不分平台）
+                                    if platform in ("twitter", "reddit"):
+                                        state.simulated_hours = max(state.twitter_simulated_hours, state.reddit_simulated_hours)
+
                                 continue
                             
                             action = AgentAction(
                                 round_num=action_data.get("round", 0),
                                 timestamp=action_data.get("timestamp", datetime.now().isoformat()),
-                                platform=platform,
-                                agent_id=action_data.get("agent_id", 0),
-                                agent_name=action_data.get("agent_name", ""),
+                                action_domain=action_data.get("action_domain", platform),
+                                agent_id=action_data.get("agent_id", action_data.get("actor_id", 0)),
+                                agent_name=action_data.get("agent_name", action_data.get("actor", "")),
                                 action_type=action_data.get("action_type", ""),
                                 action_args=action_data.get("action_args", {}),
-                                result=action_data.get("result"),
+                                target_name=action_data.get("target", action_data.get("target_name")),
+                                result=action_data.get("result", action_data.get("consequence")),
+                                reasoning=action_data.get("reasoning"),
+                                escalation_delta=action_data.get("escalation_delta", 0),
                                 success=action_data.get("success", True),
                             )
                             state.add_action(action)
-                            
+
                             # 更新轮次
                             if action.round_num and action.round_num > state.current_round:
                                 state.current_round = action.round_num
-                            
+
                             # 如果启用了图谱记忆更新，将活动发送到Zep
                             if graph_updater:
                                 graph_updater.add_activity_from_dict(action_data, platform)
@@ -750,19 +765,22 @@ class SimulationRunner:
         sim_dir = os.path.join(cls.RUN_STATE_DIR, state.simulation_id)
         twitter_log = os.path.join(sim_dir, "twitter", "actions.jsonl")
         reddit_log = os.path.join(sim_dir, "reddit", "actions.jsonl")
-        
+        geo_log = os.path.join(sim_dir, "geopolitical_actions.jsonl")
+
         # 检查哪些平台被启用（通过文件是否存在判断）
         twitter_enabled = os.path.exists(twitter_log)
         reddit_enabled = os.path.exists(reddit_log)
-        
+        geo_enabled = os.path.exists(geo_log)
+
         # 如果平台被启用但未完成，则返回 False
         if twitter_enabled and not state.twitter_completed:
             return False
         if reddit_enabled and not state.reddit_completed:
             return False
-        
-        # 至少有一个平台被启用且已完成
-        return twitter_enabled or reddit_enabled
+        # Geopolitical sim completion is detected by process exit (no separate flag needed)
+
+        # 至少有一个平台/模拟类型被启用
+        return twitter_enabled or reddit_enabled or geo_enabled
     
     @classmethod
     def _terminate_process(cls, process: subprocess.Popen, simulation_id: str, timeout: int = 10):
@@ -902,15 +920,16 @@ class SimulationRunner:
                     data = json.loads(line)
                     
                     # 跳过非动作记录（如 simulation_start, round_start, round_end 等事件）
-                    if "event_type" in data:
+                    # Social media logs use "event_type", geopolitical logs use "type"
+                    if "event_type" in data or "type" in data:
                         continue
                     
-                    # 跳过没有 agent_id 的记录（非 Agent 动作）
-                    if "agent_id" not in data:
+                    # 跳过没有 agent_id/actor 的记录（非 Agent 动作）
+                    if "agent_id" not in data and "actor" not in data and "actor_id" not in data:
                         continue
                     
-                    # 获取平台：优先使用记录中的 platform，否则使用默认平台
-                    record_platform = data.get("platform") or default_platform or ""
+                    # 获取平台/域：优先使用记录中的字段，否则使用默认平台
+                    record_platform = data.get("platform") or data.get("action_domain") or default_platform or ""
                     
                     # 过滤
                     if platform_filter and record_platform != platform_filter:
@@ -923,12 +942,15 @@ class SimulationRunner:
                     actions.append(AgentAction(
                         round_num=data.get("round", 0),
                         timestamp=data.get("timestamp", ""),
-                        platform=record_platform,
-                        agent_id=data.get("agent_id", 0),
-                        agent_name=data.get("agent_name", ""),
+                        action_domain=data.get("action_domain", record_platform),
+                        agent_id=data.get("agent_id", data.get("actor_id", 0)),
+                        agent_name=data.get("agent_name", data.get("actor", "")),
                         action_type=data.get("action_type", ""),
                         action_args=data.get("action_args", {}),
-                        result=data.get("result"),
+                        target_name=data.get("target", data.get("target_name")),
+                        result=data.get("result", data.get("consequence")),
+                        reasoning=data.get("reasoning"),
+                        escalation_delta=data.get("escalation_delta", 0),
                         success=data.get("success", True),
                     ))
                     
@@ -982,6 +1004,17 @@ class SimulationRunner:
                 round_num=round_num
             ))
         
+        # 读取 Geopolitical 动作文件
+        geo_actions_log = os.path.join(sim_dir, "geopolitical_actions.jsonl")
+        if not platform or platform == "geopolitical":
+            actions.extend(cls._read_actions_from_file(
+                geo_actions_log,
+                default_platform="geopolitical",
+                platform_filter=platform,
+                agent_id=agent_id,
+                round_num=round_num
+            ))
+
         # 如果分平台文件不存在，尝试读取旧的单一文件格式
         if not actions:
             actions_log = os.path.join(sim_dir, "actions.jsonl")
@@ -992,10 +1025,10 @@ class SimulationRunner:
                 agent_id=agent_id,
                 round_num=round_num
             )
-        
+
         # 按时间戳排序（新的在前）
         actions.sort(key=lambda x: x.timestamp, reverse=True)
-        
+
         return actions
     
     @classmethod

@@ -115,6 +115,7 @@ import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import HistoryDatabase from '../components/HistoryDatabase.vue'
 import Fors8Logo3D from '../components/Fors8Logo3D.vue'
+import { setPendingUpload } from '../store/pendingUpload'
 
 const router = useRouter()
 const mounted = ref(false)
@@ -144,12 +145,21 @@ const handleFileSelect = (e) => {
   e.target.value = ''
 }
 
+const MAX_FILE_SIZE = 50 * 1024 * 1024  // 50 MB per file
+const MAX_FILES = 10
+
 const addFiles = (newFiles) => {
+  const allowedExts = ['pdf', 'md', 'txt', 'doc', 'docx', 'png', 'jpg', 'jpeg']
   const valid = newFiles.filter(f => {
-    const ext = f.name.split('.').pop().toLowerCase()
-    return ['pdf', 'md', 'txt', 'doc', 'docx', 'png', 'jpg', 'jpeg'].includes(ext)
+    const parts = f.name.split('.')
+    if (parts.length < 2) return false  // no extension
+    const ext = parts.pop().toLowerCase()
+    if (!allowedExts.includes(ext)) return false
+    if (f.size > MAX_FILE_SIZE) return false
+    return true
   })
-  files.value.push(...valid)
+  const remaining = MAX_FILES - files.value.length
+  files.value.push(...valid.slice(0, Math.max(0, remaining)))
 }
 
 const removeFile = (i) => files.value.splice(i, 1)
@@ -161,31 +171,10 @@ const autoResize = () => {
   el.style.height = Math.min(el.scrollHeight, 160) + 'px'
 }
 
-const submit = async () => {
+const submit = () => {
   if (!canSubmit.value || loading.value) return
-  loading.value = true
-
-  try {
-    const formData = new FormData()
-    formData.append('question', query.value)
-    for (const file of files.value) {
-      formData.append('files', file)
-    }
-
-    const resp = await fetch('/api/predict', {
-      method: 'POST',
-      body: formData,
-    })
-    const data = await resp.json()
-
-    if (data.prediction_id) {
-      router.push({ path: `/predict/${data.prediction_id}` })
-    }
-  } catch (e) {
-    console.error('Prediction failed:', e)
-  } finally {
-    loading.value = false
-  }
+  setPendingUpload([...files.value], query.value, 'geopolitical')
+  router.push('/process/new')
 }
 
 onMounted(() => {

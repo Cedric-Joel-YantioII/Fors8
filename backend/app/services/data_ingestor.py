@@ -159,18 +159,22 @@ class DataIngestor:
         try:
             reader = csv.DictReader(io.StringIO(csv_content))
             for i, row in enumerate(reader):
-                record = IngestedRecord(
-                    record_id=f"{source_name}_csv_{i}",
-                    source=source_name,
-                    source_credibility=credibility,
-                    category=category,
-                    title=f"{source_name} row {i}",
-                    content="; ".join(f"{k}: {v}" for k, v in row.items() if v),
-                    timestamp=row.get("date", row.get("year", "")),
-                    metadata=dict(row),
-                )
-                records.append(record)
-                result.records_ingested += 1
+                try:
+                    record = IngestedRecord(
+                        record_id=f"{source_name}_csv_{i}",
+                        source=source_name,
+                        source_credibility=credibility,
+                        category=category,
+                        title=f"{source_name} row {i}",
+                        content="; ".join(f"{k}: {v}" for k, v in row.items() if v),
+                        timestamp=row.get("date", row.get("year", "")),
+                        metadata=dict(row),
+                    )
+                    records.append(record)
+                    result.records_ingested += 1
+                except Exception as row_err:
+                    result.records_failed += 1
+                    result.errors.append(f"CSV row {i}: {str(row_err)}")
         except Exception as e:
             result.success = False
             result.errors.append(f"CSV parse error: {str(e)}")
@@ -409,10 +413,14 @@ class DataIngestor:
             return True
         return False
 
-    def _send_to_zep(self, records: List[IngestedRecord], source_name: str):
-        """Send records to Zep as EpisodeData."""
+    def _send_to_zep(self, records: List[IngestedRecord], source_name: str) -> List[str]:
+        """Send records to Zep as EpisodeData.
+
+        Returns a list of error messages (empty on full success).
+        """
+        errors = []
         if not self.zep_client or not self.graph_id:
-            return
+            return errors
 
         try:
             from zep_cloud.types import EpisodeData
@@ -431,17 +439,28 @@ class DataIngestor:
             batch_size = 5
             for i in range(0, len(episodes), batch_size):
                 batch = episodes[i:i + batch_size]
-                self.zep_client.graph.add_batch(
-                    graph_id=self.graph_id,
-                    episodes=batch,
-                )
+                try:
+                    self.zep_client.graph.add_batch(
+                        graph_id=self.graph_id,
+                        episodes=batch,
+                    )
+                except Exception as batch_err:
+                    err_msg = f"Zep batch {i // batch_size} failed for {source_name}: {batch_err}"
+                    logger.error(err_msg)
+                    errors.append(err_msg)
 
-            logger.info(f"Sent {len(episodes)} episodes to Zep from {source_name}")
+            sent = len(episodes) - len(errors) * batch_size
+            if sent > 0:
+                logger.info(f"Sent {sent} episodes to Zep from {source_name}")
 
         except ImportError:
             logger.warning("zep_cloud not installed — skipping Zep ingestion")
         except Exception as e:
-            logger.error(f"Zep ingestion failed for {source_name}: {e}")
+            err_msg = f"Zep ingestion failed for {source_name}: {e}"
+            logger.error(err_msg)
+            errors.append(err_msg)
+
+        return errors
 
     def _track_source(
         self, source_name: str, category,

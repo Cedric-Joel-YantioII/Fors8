@@ -153,58 +153,69 @@ def generate_ontology():
         simulation_requirement = request.form.get('simulation_requirement', '')
         project_name = request.form.get('project_name', 'Unnamed Project')
         additional_context = request.form.get('additional_context', '')
-        
+        mode = request.form.get('mode', '')
+
         logger.debug(f"项目名称: {project_name}")
         logger.debug(f"模拟需求: {simulation_requirement[:100]}...")
-        
+        logger.debug(f"模式: {mode}")
+
         if not simulation_requirement:
             return jsonify({
                 "success": False,
                 "error": "请提供模拟需求描述 (simulation_requirement)"
             }), 400
-        
+
         # 获取上传的文件
         uploaded_files = request.files.getlist('files')
-        if not uploaded_files or all(not f.filename for f in uploaded_files):
+        has_files = uploaded_files and not all(not f.filename for f in uploaded_files)
+
+        # In geopolitical mode, files are optional (the question alone is enough)
+        if not has_files and mode != 'geopolitical':
             return jsonify({
                 "success": False,
                 "error": "请至少上传一个文档文件"
             }), 400
-        
+
         # 创建项目
         project = ProjectManager.create_project(name=project_name)
         project.simulation_requirement = simulation_requirement
         logger.info(f"创建项目: {project.project_id}")
-        
+
         # 保存文件并提取文本
         document_texts = []
         all_text = ""
-        
-        for file in uploaded_files:
-            if file and file.filename and allowed_file(file.filename):
-                # 保存文件到项目目录
-                file_info = ProjectManager.save_file_to_project(
-                    project.project_id, 
-                    file, 
-                    file.filename
-                )
-                project.files.append({
-                    "filename": file_info["original_filename"],
-                    "size": file_info["size"]
-                })
-                
-                # 提取文本
-                text = FileParser.extract_text(file_info["path"])
-                text = TextProcessor.preprocess_text(text)
-                document_texts.append(text)
-                all_text += f"\n\n=== {file_info['original_filename']} ===\n{text}"
-        
+
+        if has_files:
+            for file in uploaded_files:
+                if file and file.filename and allowed_file(file.filename):
+                    # 保存文件到项目目录
+                    file_info = ProjectManager.save_file_to_project(
+                        project.project_id,
+                        file,
+                        file.filename
+                    )
+                    project.files.append({
+                        "filename": file_info["original_filename"],
+                        "size": file_info["size"]
+                    })
+
+                    # 提取文本
+                    text = FileParser.extract_text(file_info["path"])
+                    text = TextProcessor.preprocess_text(text)
+                    document_texts.append(text)
+                    all_text += f"\n\n=== {file_info['original_filename']} ===\n{text}"
+
+        # In geopolitical mode without files, use the simulation requirement as document text
         if not document_texts:
-            ProjectManager.delete_project(project.project_id)
-            return jsonify({
-                "success": False,
-                "error": "没有成功处理任何文档，请检查文件格式"
-            }), 400
+            if mode == 'geopolitical':
+                document_texts.append(simulation_requirement)
+                all_text = simulation_requirement
+            else:
+                ProjectManager.delete_project(project.project_id)
+                return jsonify({
+                    "success": False,
+                    "error": "没有成功处理任何文档，请检查文件格式"
+                }), 400
         
         # 保存提取的文本
         project.total_text_length = len(all_text)

@@ -149,9 +149,32 @@ const currentStageIndex = computed(() => {
   return stageKeyMap[status.value] ?? 0
 })
 
+let fetchFailCount = 0
+const MAX_FETCH_FAILURES = 5
+
 const fetchStatus = async () => {
   try {
     const resp = await fetch(`/api/predict/${props.predictionId}`)
+
+    if (!resp.ok) {
+      fetchFailCount++
+      if (resp.status === 404) {
+        errorMessage.value = 'Prediction not found. It may have expired.'
+        status.value = 'error'
+        clearInterval(pollTimer)
+        pollTimer = null
+        return
+      }
+      if (fetchFailCount >= MAX_FETCH_FAILURES) {
+        errorMessage.value = `Server error (HTTP ${resp.status}). Please try again later.`
+        status.value = 'error'
+        clearInterval(pollTimer)
+        pollTimer = null
+      }
+      return
+    }
+
+    fetchFailCount = 0
     const data = await resp.json()
 
     status.value = data.status || 'pending'
@@ -180,6 +203,13 @@ const fetchStatus = async () => {
     }
   } catch (e) {
     console.error('Failed to fetch prediction status:', e)
+    fetchFailCount++
+    if (fetchFailCount >= MAX_FETCH_FAILURES) {
+      errorMessage.value = 'Network error — unable to reach the server.'
+      status.value = 'error'
+      clearInterval(pollTimer)
+      pollTimer = null
+    }
   }
 }
 
@@ -199,9 +229,19 @@ const formatLabel = (label) => {
   return label.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
 }
 
+const escapeHtml = (str) => {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+}
+
 const formatAnswer = (text) => {
   if (!text) return ''
-  return text.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>')
+  const escaped = escapeHtml(text)
+  return escaped.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>')
 }
 </script>
 
@@ -469,7 +509,7 @@ const formatAnswer = (text) => {
 
 .actors-header {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
   gap: 12px;
   padding: 8px 0;
   border-bottom: 1px solid #eee;
@@ -482,7 +522,7 @@ const formatAnswer = (text) => {
 
 .actors-row {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
   gap: 12px;
   padding: 12px 0;
   border-bottom: 1px solid #f5f5f5;
