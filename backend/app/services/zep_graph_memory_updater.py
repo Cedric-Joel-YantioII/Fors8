@@ -33,12 +33,10 @@ class AgentActivity:
     
     def to_episode_text(self) -> str:
         """
-        将活动转换为可以发送给Zep的文本描述
-        
-        采用自然语言描述格式，让Zep能够从中提取实体和关系
-        不添加模拟相关的前缀，避免误导图谱更新
+        Convert activity to natural language text for Zep EpisodeData.
+        Supports both social media (OASIS) and geopolitical action types.
         """
-        # 根据不同的动作类型生成不同的描述
+        # Social media action descriptions (OASIS Tier 3 agents)
         action_descriptions = {
             "CREATE_POST": self._describe_create_post,
             "LIKE_POST": self._describe_like_post,
@@ -52,13 +50,92 @@ class AgentActivity:
             "SEARCH_POSTS": self._describe_search,
             "SEARCH_USER": self._describe_search_user,
             "MUTE": self._describe_mute,
+            # Geopolitical action descriptions (Tier 1 & 2 actors)
+            "deploy_forces": self._describe_geo_action,
+            "launch_strike": self._describe_geo_action,
+            "defend_position": self._describe_geo_action,
+            "blockade": self._describe_geo_action,
+            "cyber_attack": self._describe_geo_action,
+            "missile_launch": self._describe_geo_action,
+            "air_strike": self._describe_geo_action,
+            "naval_operation": self._describe_geo_action,
+            "propose_negotiation": self._describe_geo_action,
+            "issue_ultimatum": self._describe_geo_action,
+            "sign_treaty": self._describe_geo_action,
+            "break_alliance": self._describe_geo_action,
+            "request_mediation": self._describe_geo_action,
+            "un_vote": self._describe_geo_action,
+            "impose_sanctions": self._describe_geo_action,
+            "cut_trade": self._describe_geo_action,
+            "freeze_assets": self._describe_geo_action,
+            "oil_embargo": self._describe_geo_action,
+            "gather_intel": self._describe_geo_action,
+            "covert_operation": self._describe_geo_action,
+            "cyber_espionage": self._describe_geo_action,
+            "arm_proxy": self._describe_geo_action,
+            "direct_proxy_attack": self._describe_geo_action,
+            "proxy_ceasefire": self._describe_geo_action,
+            "public_statement": self._describe_geo_action,
+            "propaganda_campaign": self._describe_geo_action,
+            "disinformation_campaign": self._describe_geo_action,
+            "hold_position": self._describe_geo_action,
+            "assess_situation": self._describe_geo_action,
+            "backchannel_communication": self._describe_geo_action,
         }
-        
+
         describe_func = action_descriptions.get(self.action_type, self._describe_generic)
         description = describe_func()
-        
-        # 直接返回 "agent名称: 活动描述" 格式，不添加模拟前缀
+
         return f"{self.agent_name}: {description}"
+
+    def _describe_geo_action(self) -> str:
+        """Describe a geopolitical action in natural language for Zep."""
+        target = self.action_args.get("target_name", self.action_args.get("target_actor_name", ""))
+        consequence = self.action_args.get("consequence", self.action_args.get("result", ""))
+        reasoning = self.action_args.get("reasoning", "")
+        region = self.action_args.get("region", "")
+        statement = self.action_args.get("statement", "")
+
+        # Map action types to natural language descriptions
+        geo_descriptions = {
+            "launch_strike": f"launched military strike against {target}",
+            "missile_launch": f"fired missile salvo at {target}",
+            "air_strike": f"conducted air strikes on {target}",
+            "deploy_forces": f"deployed forces to {region or target or 'the region'}",
+            "defend_position": "fortified defensive positions",
+            "blockade": f"imposed blockade on {self.action_args.get('chokepoint', target or 'maritime routes')}",
+            "cyber_attack": f"conducted cyber attack against {target} infrastructure",
+            "naval_operation": f"conducted naval operations in {region or 'contested waters'}",
+            "propose_negotiation": f"proposed negotiations with {target or 'opposing parties'}",
+            "issue_ultimatum": f"issued ultimatum to {target}",
+            "sign_treaty": f"signed agreement with {target}",
+            "break_alliance": f"broke alliance with {target}",
+            "request_mediation": "requested international mediation",
+            "un_vote": f"voted on UN resolution",
+            "impose_sanctions": f"imposed sanctions on {target}",
+            "cut_trade": f"cut trade relations with {target}",
+            "freeze_assets": f"froze {target}'s financial assets",
+            "oil_embargo": f"imposed oil embargo on {target}",
+            "gather_intel": f"gathered intelligence on {target}",
+            "covert_operation": f"conducted covert operation against {target}",
+            "cyber_espionage": f"conducted cyber espionage against {target}",
+            "arm_proxy": f"supplied weapons to {target}",
+            "direct_proxy_attack": f"directed proxy attack against {target}",
+            "proxy_ceasefire": "declared ceasefire in proxy operations",
+            "public_statement": f"issued public statement: {statement[:200]}" if statement else "issued public statement",
+            "propaganda_campaign": "launched propaganda campaign",
+            "disinformation_campaign": "launched disinformation campaign",
+            "hold_position": "held position and assessed the situation",
+            "assess_situation": "conducted strategic assessment",
+            "backchannel_communication": f"engaged in backchannel communication with {target or 'parties'}",
+        }
+
+        desc = geo_descriptions.get(self.action_type, f"performed {self.action_type}")
+
+        if consequence:
+            desc += f". Result: {consequence}"
+
+        return desc
     
     def _describe_create_post(self) -> str:
         content = self.action_args.get("content", "")

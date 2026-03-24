@@ -46,27 +46,38 @@ class RunnerStatus(str, Enum):
 
 @dataclass
 class AgentAction:
-    """Agent动作记录"""
+    """Agent action record — works for both geopolitical and social media actions."""
     round_num: int
     timestamp: str
-    platform: str  # twitter / reddit
-    agent_id: int
-    agent_name: str
-    action_type: str  # CREATE_POST, LIKE_POST, etc.
+    action_domain: str  # military / diplomatic / economic / intelligence / proxy / information / passive / twitter / reddit
+    agent_id: Union[int, str] = 0
+    agent_name: str = ""
+    action_type: str = ""  # ActionType enum value or OASIS action
     action_args: Dict[str, Any] = field(default_factory=dict)
+    target_name: Optional[str] = None
     result: Optional[str] = None
+    reasoning: Optional[str] = None
+    escalation_delta: int = 0
     success: bool = True
-    
+
+    # Legacy alias
+    @property
+    def platform(self) -> str:
+        return self.action_domain
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "round_num": self.round_num,
             "timestamp": self.timestamp,
-            "platform": self.platform,
+            "action_domain": self.action_domain,
             "agent_id": self.agent_id,
             "agent_name": self.agent_name,
             "action_type": self.action_type,
             "action_args": self.action_args,
+            "target_name": self.target_name,
             "result": self.result,
+            "reasoning": self.reasoning,
+            "escalation_delta": self.escalation_delta,
             "success": self.success,
         }
 
@@ -109,13 +120,23 @@ class SimulationRunState:
     simulated_hours: int = 0
     total_simulation_hours: int = 0
     
-    # 各平台独立轮次和模拟时间（用于双平台并行显示）
+    # Geopolitical simulation state
+    escalation_level: int = 5
+    current_phase: str = "crisis"
+    total_military_actions: int = 0
+    total_diplomatic_actions: int = 0
+    total_economic_actions: int = 0
+    total_intelligence_actions: int = 0
+    total_proxy_actions: int = 0
+    total_info_actions: int = 0
+    world_state_snapshot: Optional[Dict[str, Any]] = None
+
+    # Platform state (OASIS info warfare layer)
     twitter_current_round: int = 0
     reddit_current_round: int = 0
     twitter_simulated_hours: int = 0
     reddit_simulated_hours: int = 0
-    
-    # 平台状态
+
     twitter_running: bool = False
     reddit_running: bool = False
     twitter_actions_count: int = 0
@@ -144,19 +165,37 @@ class SimulationRunState:
     process_pid: Optional[int] = None
     
     def add_action(self, action: AgentAction):
-        """添加动作到最近动作列表"""
+        """Add action to recent actions list."""
         self.recent_actions.insert(0, action)
         if len(self.recent_actions) > self.max_recent_actions:
             self.recent_actions = self.recent_actions[:self.max_recent_actions]
-        
-        if action.platform == "twitter":
+
+        domain = action.action_domain
+        if domain == "twitter":
             self.twitter_actions_count += 1
-        else:
+        elif domain == "reddit":
             self.reddit_actions_count += 1
-        
+        elif domain == "military":
+            self.total_military_actions += 1
+        elif domain == "diplomatic":
+            self.total_diplomatic_actions += 1
+        elif domain == "economic":
+            self.total_economic_actions += 1
+        elif domain == "intelligence":
+            self.total_intelligence_actions += 1
+        elif domain == "proxy":
+            self.total_proxy_actions += 1
+        elif domain == "information":
+            self.total_info_actions += 1
+
         self.updated_at = datetime.now().isoformat()
     
     def to_dict(self) -> Dict[str, Any]:
+        total_geo_actions = (
+            self.total_military_actions + self.total_diplomatic_actions +
+            self.total_economic_actions + self.total_intelligence_actions +
+            self.total_proxy_actions + self.total_info_actions
+        )
         return {
             "simulation_id": self.simulation_id,
             "runner_status": self.runner_status.value,
@@ -165,7 +204,18 @@ class SimulationRunState:
             "simulated_hours": self.simulated_hours,
             "total_simulation_hours": self.total_simulation_hours,
             "progress_percent": round(self.current_round / max(self.total_rounds, 1) * 100, 1),
-            # 各平台独立轮次和时间
+            # Geopolitical state
+            "escalation_level": self.escalation_level,
+            "current_phase": self.current_phase,
+            "total_military_actions": self.total_military_actions,
+            "total_diplomatic_actions": self.total_diplomatic_actions,
+            "total_economic_actions": self.total_economic_actions,
+            "total_intelligence_actions": self.total_intelligence_actions,
+            "total_proxy_actions": self.total_proxy_actions,
+            "total_info_actions": self.total_info_actions,
+            "total_geo_actions": total_geo_actions,
+            "world_state_snapshot": self.world_state_snapshot,
+            # OASIS platform state
             "twitter_current_round": self.twitter_current_round,
             "reddit_current_round": self.reddit_current_round,
             "twitter_simulated_hours": self.twitter_simulated_hours,
@@ -176,7 +226,7 @@ class SimulationRunState:
             "reddit_completed": self.reddit_completed,
             "twitter_actions_count": self.twitter_actions_count,
             "reddit_actions_count": self.reddit_actions_count,
-            "total_actions_count": self.twitter_actions_count + self.reddit_actions_count,
+            "total_actions_count": total_geo_actions + self.twitter_actions_count + self.reddit_actions_count,
             "started_at": self.started_at,
             "updated_at": self.updated_at,
             "completed_at": self.completed_at,
@@ -383,8 +433,10 @@ class SimulationRunner:
         else:
             cls._graph_memory_enabled[simulation_id] = False
         
-        # 确定运行哪个脚本（脚本位于 backend/scripts/ 目录）
-        if platform == "twitter":
+        # Determine which script to run
+        if platform == "geopolitical":
+            script_name = "run_geopolitical_simulation.py"
+        elif platform == "twitter":
             script_name = "run_twitter_simulation.py"
             state.twitter_running = True
         elif platform == "reddit":

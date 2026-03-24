@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1e293b;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="ring-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#6366f1;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="inner-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e40af;stop-opacity:0.6" />
+      <stop offset="100%" style="stop-color:#4f46e5;stop-opacity:0.3" />
+    </linearGradient>
+    <linearGradient id="text-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#e2e8f0" />
+      <stop offset="100%" style="stop-color:#94a3b8" />
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="shadow3d">
+      <feDropShadow dx="3" dy="3" stdDeviation="4" flood-color="#000" flood-opacity="0.5"/>
+    </filter>
+  </defs>
+
+  <!-- Background circle -->
+  <circle cx="200" cy="200" r="190" fill="url(#bg-grad)" stroke="#334155" stroke-width="2"/>
+
+  <!-- Outer orbital ring (3D effect) -->
+  <ellipse cx="200" cy="200" rx="160" ry="60" fill="none" stroke="url(#ring-grad)" stroke-width="2.5" opacity="0.4" transform="rotate(-20, 200, 200)"/>
+  <ellipse cx="200" cy="200" rx="155" ry="155" fill="none" stroke="url(#ring-grad)" stroke-width="1.5" opacity="0.15"/>
+
+  <!-- Inner orbital rings -->
+  <ellipse cx="200" cy="200" rx="120" ry="45" fill="none" stroke="#3b82f6" stroke-width="1.5" opacity="0.3" transform="rotate(30, 200, 200)"/>
+  <ellipse cx="200" cy="200" rx="140" ry="50" fill="none" stroke="#6366f1" stroke-width="1" opacity="0.2" transform="rotate(-45, 200, 200)"/>
+
+  <!-- Center glow -->
+  <circle cx="200" cy="200" r="80" fill="url(#inner-grad)" opacity="0.5"/>
+
+  <!-- Prediction nodes (like agent dots) -->
+  <circle cx="120" cy="140" r="4" fill="#3b82f6" opacity="0.8" filter="url(#glow)"/>
+  <circle cx="280" cy="160" r="3" fill="#6366f1" opacity="0.7" filter="url(#glow)"/>
+  <circle cx="160" cy="280" r="3.5" fill="#8b5cf6" opacity="0.6" filter="url(#glow)"/>
+  <circle cx="260" cy="260" r="3" fill="#3b82f6" opacity="0.7" filter="url(#glow)"/>
+  <circle cx="200" cy="100" r="3" fill="#06b6d4" opacity="0.6" filter="url(#glow)"/>
+  <circle cx="310" cy="220" r="2.5" fill="#22c55e" opacity="0.5" filter="url(#glow)"/>
+  <circle cx="100" cy="220" r="2.5" fill="#ef4444" opacity="0.5" filter="url(#glow)"/>
+
+  <!-- Connection lines between nodes -->
+  <line x1="120" y1="140" x2="200" y2="100" stroke="#3b82f6" stroke-width="0.5" opacity="0.3"/>
+  <line x1="280" y1="160" x2="260" y2="260" stroke="#6366f1" stroke-width="0.5" opacity="0.3"/>
+  <line x1="160" y1="280" x2="100" y2="220" stroke="#8b5cf6" stroke-width="0.5" opacity="0.2"/>
+  <line x1="200" y1="100" x2="280" y2="160" stroke="#06b6d4" stroke-width="0.5" opacity="0.3"/>
+  <line x1="120" y1="140" x2="160" y2="280" stroke="#3b82f6" stroke-width="0.5" opacity="0.2"/>
+
+  <!-- FORS8 text with 3D shadow -->
+  <text x="200" y="195" text-anchor="middle" font-family="'Space Grotesk', 'Inter', sans-serif" font-size="72" font-weight="700" fill="#1e293b" filter="url(#shadow3d)" opacity="0.3" transform="translate(3, 3)">FORS8</text>
+  <text x="200" y="195" text-anchor="middle" font-family="'Space Grotesk', 'Inter', sans-serif" font-size="72" font-weight="700" fill="url(#text-grad)">FORS8</text>
+
+  <!-- Subtitle -->
+  <text x="200" y="230" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="12" fill="#64748b" letter-spacing="4">WAR PREDICTION ENGINE</text>
+
+  <!-- Accent dot on the 8 -->
+  <circle cx="258" cy="177" r="5" fill="#ef4444" opacity="0.9" filter="url(#glow)"/>
+</svg>

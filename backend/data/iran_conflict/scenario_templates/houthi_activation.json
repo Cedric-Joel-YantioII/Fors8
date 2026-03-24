@@ -1,0 +1,29 @@
+{
+  "scenario_name": "Houthi Activation - Double Chokepoint",
+  "description": "What if Iran signals Houthis to activate? Red Sea naval blockade + Hormuz closure creates double chokepoint. Global shipping crisis.",
+  "overrides": {
+    "escalation_level": 8,
+    "bab_el_mandeb_open": false,
+    "suez_canal_open": false,
+    "oil_price": 140.0,
+    "active_conflicts": [
+      "US/Israel vs Iran (Operation Epic Fury)",
+      "Israel vs Hezbollah (2026 Lebanon War)",
+      "Iraqi PMF vs US bases in Iraq",
+      "Houthis vs US Navy (Red Sea/Bab el-Mandeb)"
+    ]
+  },
+  "scenario_variables": {
+    "houthi_full_activation": true,
+    "iran_signals_escalation": true,
+    "us_diverts_naval_assets_to_red_sea": true,
+    "global_shipping_reroute_cape_of_good_hope": true
+  },
+  "actor_overrides": {
+    "houthis": {
+      "risk_tolerance": 0.8,
+      "initial_force_strength": 30
+    }
+  },
+  "max_rounds": 20
+}

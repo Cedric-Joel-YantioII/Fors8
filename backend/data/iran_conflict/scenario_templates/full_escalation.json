@@ -1,0 +1,29 @@
+{
+  "scenario_name": "Full Escalation - Negotiations Collapse",
+  "description": "5-day pause expires with no deal. Iran resumes strikes. Israel targets remaining nuclear sites. Houthis activate. GCC energy infrastructure hit again. Oil above $150.",
+  "overrides": {
+    "escalation_level": 8,
+    "oil_price": 135.0,
+    "phase": "escalation-critical",
+    "active_negotiations": []
+  },
+  "scenario_variables": {
+    "negotiations_collapsed": true,
+    "iran_resumes_full_retaliation": true,
+    "israel_targets_nuclear_sites": true,
+    "houthi_full_activation": true,
+    "gcc_infrastructure_second_wave": true,
+    "china_threatens_economic_retaliation": true,
+    "us_congressional_war_powers_debate": true
+  },
+  "actor_overrides": {
+    "iran": {
+      "negotiation_willingness": 0.1,
+      "risk_tolerance": 0.9
+    },
+    "usa": {
+      "negotiation_willingness": 0.2
+    }
+  },
+  "max_rounds": 30
+}

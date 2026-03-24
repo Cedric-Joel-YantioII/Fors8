@@ -44,11 +44,10 @@ class Config:
     DEFAULT_CHUNK_SIZE = 500  # 默认切块大小
     DEFAULT_CHUNK_OVERLAP = 50  # 默认重叠大小
     
-    # OASIS模拟配置
+    # OASIS simulation config (retained for Tier 3 information warfare agents)
     OASIS_DEFAULT_MAX_ROUNDS = int(os.environ.get('OASIS_DEFAULT_MAX_ROUNDS', '10'))
     OASIS_SIMULATION_DATA_DIR = os.path.join(os.path.dirname(__file__), '../uploads/simulations')
-    
-    # OASIS平台可用动作配置
+
     OASIS_TWITTER_ACTIONS = [
         'CREATE_POST', 'LIKE_POST', 'REPOST', 'FOLLOW', 'DO_NOTHING', 'QUOTE_POST'
     ]
@@ -57,6 +56,26 @@ class Config:
         'LIKE_COMMENT', 'DISLIKE_COMMENT', 'SEARCH_POSTS', 'SEARCH_USER',
         'TREND', 'REFRESH', 'DO_NOTHING', 'FOLLOW', 'MUTE'
     ]
+
+    # Geopolitical simulation config
+    GEO_DEFAULT_MAX_ROUNDS = int(os.environ.get('GEO_DEFAULT_MAX_ROUNDS', '30'))
+    GEO_SIMULATION_DATA_DIR = os.path.join(os.path.dirname(__file__), '../uploads/simulations')
+    GEO_TIME_STEP_HOURS = int(os.environ.get('GEO_TIME_STEP_HOURS', '24'))
+
+    # Dual-LLM bias mitigation (Mode B)
+    DUAL_LLM_ENABLED = os.environ.get('DUAL_LLM_ENABLED', 'false').lower() == 'true'
+    DUAL_LLM_API_KEY = os.environ.get('DUAL_LLM_API_KEY', '')  # DeepSeek API key
+    DUAL_LLM_BASE_URL = os.environ.get('DUAL_LLM_BASE_URL', 'https://api.deepseek.com/v1')
+    DUAL_LLM_MODEL_NAME = os.environ.get('DUAL_LLM_MODEL_NAME', 'deepseek-chat')
+
+    # Consequence engine rules file (optional override)
+    GEO_RULES_PATH = os.environ.get('GEO_RULES_PATH', '')
+
+    # Authentication method: "api_key" (default) or "chatgpt_oauth"
+    AUTH_METHOD = os.environ.get('AUTH_METHOD', 'api_key')
+
+    # Iran conflict data directory
+    IRAN_DATA_DIR = os.path.join(os.path.dirname(__file__), '../data/iran_conflict')
     
     # Report Agent配置
     REPORT_AGENT_MAX_TOOL_CALLS = int(os.environ.get('REPORT_AGENT_MAX_TOOL_CALLS', '5'))

@@ -1,7 +1,7 @@
 """
-OASIS模拟管理器
-管理Twitter和Reddit双平台并行模拟
-使用预设脚本 + LLM智能生成配置参数
+Simulation Manager
+Manages geopolitical conflict simulation with optional OASIS info warfare layer.
+Uses LLM-driven profile generation and configurable consequence engine.
 """
 
 import os
@@ -15,7 +15,7 @@ from enum import Enum
 from ..config import Config
 from ..utils.logger import get_logger
 from .zep_entity_reader import ZepEntityReader, FilteredEntities
-from .oasis_profile_generator import OasisProfileGenerator, OasisAgentProfile
+from .geopolitical_profile_generator import GeopoliticalProfileGenerator, GeopoliticalActorProfile
 from .simulation_config_generator import SimulationConfigGenerator, SimulationParameters
 
 logger = get_logger('mirofish.simulation')
@@ -33,53 +33,64 @@ class SimulationStatus(str, Enum):
     FAILED = "failed"
 
 
-class PlatformType(str, Enum):
-    """平台类型"""
-    TWITTER = "twitter"
-    REDDIT = "reddit"
+class SimulationMode(str, Enum):
+    """Simulation mode"""
+    GEOPOLITICAL = "geopolitical"  # Geopolitical conflict simulation (default)
+    SOCIAL_MEDIA = "social_media"  # Legacy OASIS social media simulation
 
 
 @dataclass
 class SimulationState:
-    """模拟状态"""
+    """Simulation state"""
     simulation_id: str
     project_id: str
     graph_id: str
-    
-    # 平台启用状态
+
+    # Mode
+    mode: SimulationMode = SimulationMode.GEOPOLITICAL
+
+    # Platform enable (for OASIS info warfare layer)
     enable_twitter: bool = True
     enable_reddit: bool = True
-    
-    # 状态
+
+    # Status
     status: SimulationStatus = SimulationStatus.CREATED
-    
-    # 准备阶段数据
+
+    # Preparation data
     entities_count: int = 0
     profiles_count: int = 0
     entity_types: List[str] = field(default_factory=list)
-    
-    # 配置生成信息
+
+    # Config generation
     config_generated: bool = False
     config_reasoning: str = ""
-    
-    # 运行时数据
+
+    # Runtime — geopolitical
     current_round: int = 0
+    escalation_level: int = 5
+    current_phase: str = "crisis"
+    scenario_type: str = ""
+
+    # Runtime — OASIS (info warfare layer)
     twitter_status: str = "not_started"
     reddit_status: str = "not_started"
-    
-    # 时间戳
+
+    # Dual-LLM mode
+    dual_llm_enabled: bool = False
+
+    # Timestamps
     created_at: str = field(default_factory=lambda: datetime.now().isoformat())
     updated_at: str = field(default_factory=lambda: datetime.now().isoformat())
-    
-    # 错误信息
+
+    # Error
     error: Optional[str] = None
-    
+
     def to_dict(self) -> Dict[str, Any]:
-        """完整状态字典（内部使用）"""
         return {
             "simulation_id": self.simulation_id,
             "project_id": self.project_id,
             "graph_id": self.graph_id,
+            "mode": self.mode.value,
             "enable_twitter": self.enable_twitter,
             "enable_reddit": self.enable_reddit,
             "status": self.status.value,
@@ -89,24 +100,30 @@ class SimulationState:
             "config_generated": self.config_generated,
             "config_reasoning": self.config_reasoning,
             "current_round": self.current_round,
+            "escalation_level": self.escalation_level,
+            "current_phase": self.current_phase,
+            "scenario_type": self.scenario_type,
             "twitter_status": self.twitter_status,
             "reddit_status": self.reddit_status,
+            "dual_llm_enabled": self.dual_llm_enabled,
             "created_at": self.created_at,
             "updated_at": self.updated_at,
             "error": self.error,
         }
-    
+
     def to_simple_dict(self) -> Dict[str, Any]:
-        """简化状态字典（API返回使用）"""
         return {
             "simulation_id": self.simulation_id,
             "project_id": self.project_id,
             "graph_id": self.graph_id,
+            "mode": self.mode.value,
             "status": self.status.value,
             "entities_count": self.entities_count,
             "profiles_count": self.profiles_count,
             "entity_types": self.entity_types,
             "config_generated": self.config_generated,
+            "escalation_level": self.escalation_level,
+            "current_phase": self.current_phase,
             "error": self.error,
         }
 
@@ -167,10 +184,17 @@ class SimulationManager:
         with open(state_file, 'r', encoding='utf-8') as f:
             data = json.load(f)
         
+        mode_str = data.get("mode", "geopolitical")
+        try:
+            mode = SimulationMode(mode_str)
+        except ValueError:
+            mode = SimulationMode.GEOPOLITICAL
+
         state = SimulationState(
             simulation_id=simulation_id,
             project_id=data.get("project_id", ""),
             graph_id=data.get("graph_id", ""),
+            mode=mode,
             enable_twitter=data.get("enable_twitter", True),
             enable_reddit=data.get("enable_reddit", True),
             status=SimulationStatus(data.get("status", "created")),
@@ -180,8 +204,12 @@ class SimulationManager:
             config_generated=data.get("config_generated", False),
             config_reasoning=data.get("config_reasoning", ""),
             current_round=data.get("current_round", 0),
+            escalation_level=data.get("escalation_level", 5),
+            current_phase=data.get("current_phase", "crisis"),
+            scenario_type=data.get("scenario_type", ""),
             twitter_status=data.get("twitter_status", "not_started"),
             reddit_status=data.get("reddit_status", "not_started"),
+            dual_llm_enabled=data.get("dual_llm_enabled", False),
             created_at=data.get("created_at", datetime.now().isoformat()),
             updated_at=data.get("updated_at", datetime.now().isoformat()),
             error=data.get("error"),
@@ -194,36 +222,44 @@ class SimulationManager:
         self,
         project_id: str,
         graph_id: str,
+        mode: str = "geopolitical",
         enable_twitter: bool = True,
         enable_reddit: bool = True,
+        dual_llm_enabled: bool = False,
+        scenario_type: str = "",
     ) -> SimulationState:
         """
-        创建新的模拟
-        
+        Create a new simulation.
+
         Args:
-            project_id: 项目ID
-            graph_id: Zep图谱ID
-            enable_twitter: 是否启用Twitter模拟
-            enable_reddit: 是否启用Reddit模拟
-            
-        Returns:
-            SimulationState
+            project_id: Project ID
+            graph_id: Zep graph ID
+            mode: "geopolitical" (default) or "social_media" (legacy)
+            enable_twitter: Enable OASIS Twitter (info warfare layer)
+            enable_reddit: Enable OASIS Reddit (info warfare layer)
+            dual_llm_enabled: Use dual-LLM cross-validation (Mode B)
+            scenario_type: Scenario template name (e.g., "iran_conflict")
         """
         import uuid
         simulation_id = f"sim_{uuid.uuid4().hex[:12]}"
-        
+
+        sim_mode = SimulationMode(mode) if mode in [m.value for m in SimulationMode] else SimulationMode.GEOPOLITICAL
+
         state = SimulationState(
             simulation_id=simulation_id,
             project_id=project_id,
             graph_id=graph_id,
+            mode=sim_mode,
             enable_twitter=enable_twitter,
             enable_reddit=enable_reddit,
+            dual_llm_enabled=dual_llm_enabled,
+            scenario_type=scenario_type,
             status=SimulationStatus.CREATED,
         )
-        
+
         self._save_simulation_state(state)
-        logger.info(f"创建模拟: {simulation_id}, project={project_id}, graph={graph_id}")
-        
+        logger.info(f"Created simulation: {simulation_id}, mode={mode}, project={project_id}")
+
         return state
     
     def prepare_simulation(
@@ -300,84 +336,106 @@ class SimulationManager:
                 self._save_simulation_state(state)
                 return state
             
-            # ========== 阶段2: 生成Agent Profile ==========
+            # ========== Phase 2: Generate Actor Profiles ==========
             total_entities = len(filtered.entities)
-            
+
             if progress_callback:
                 progress_callback(
-                    "generating_profiles", 0, 
-                    "开始生成...",
+                    "generating_profiles", 0,
+                    "Starting profile generation...",
                     current=0,
                     total=total_entities
                 )
-            
-            # 传入graph_id以启用Zep检索功能，获取更丰富的上下文
-            generator = OasisProfileGenerator(graph_id=state.graph_id)
-            
-            def profile_progress(current, total, msg):
-                if progress_callback:
-                    progress_callback(
-                        "generating_profiles", 
-                        int(current / total * 100), 
-                        msg,
-                        current=current,
-                        total=total,
-                        item_name=msg
-                    )
-            
-            # 设置实时保存的文件路径（优先使用 Reddit JSON 格式）
-            realtime_output_path = None
-            realtime_platform = "reddit"
-            if state.enable_reddit:
-                realtime_output_path = os.path.join(sim_dir, "reddit_profiles.json")
+
+            if state.mode == SimulationMode.GEOPOLITICAL:
+                # Geopolitical profile generation
+                from zep_cloud.client import Zep
+                zep_client = Zep(api_key=Config.ZEP_API_KEY) if Config.ZEP_API_KEY else None
+
+                geo_generator = GeopoliticalProfileGenerator(
+                    graph_id=state.graph_id,
+                    zep_client=zep_client,
+                )
+
+                def profile_progress(current, total):
+                    if progress_callback:
+                        progress_callback(
+                            "generating_profiles",
+                            int(current / total * 100),
+                            f"Profile {current}/{total}",
+                            current=current,
+                            total=total,
+                        )
+
+                geo_profiles = geo_generator.generate_profiles(
+                    entities=filtered.entities,
+                    simulation_requirement=simulation_requirement,
+                    progress_callback=profile_progress,
+                )
+
+                state.profiles_count = len(geo_profiles)
+
+                # Save geopolitical profiles as JSON
+                profiles_path = os.path.join(sim_dir, "actor_profiles.json")
+                profiles_data = [p.to_dict() for p in geo_profiles]
+                with open(profiles_path, 'w', encoding='utf-8') as f:
+                    json.dump(profiles_data, f, ensure_ascii=False, indent=2)
+
+            else:
+                # Legacy OASIS profile generation
+                from .oasis_profile_generator import OasisProfileGenerator
+                generator = OasisProfileGenerator(graph_id=state.graph_id)
+
+                def profile_progress(current, total, msg):
+                    if progress_callback:
+                        progress_callback(
+                            "generating_profiles",
+                            int(current / total * 100),
+                            msg,
+                            current=current,
+                            total=total,
+                            item_name=msg
+                        )
+
+                realtime_output_path = None
                 realtime_platform = "reddit"
-            elif state.enable_twitter:
-                realtime_output_path = os.path.join(sim_dir, "twitter_profiles.csv")
-                realtime_platform = "twitter"
-            
-            profiles = generator.generate_profiles_from_entities(
-                entities=filtered.entities,
-                use_llm=use_llm_for_profiles,
-                progress_callback=profile_progress,
-                graph_id=state.graph_id,  # 传入graph_id用于Zep检索
-                parallel_count=parallel_profile_count,  # 并行生成数量
-                realtime_output_path=realtime_output_path,  # 实时保存路径
-                output_platform=realtime_platform  # 输出格式
-            )
-            
-            state.profiles_count = len(profiles)
-            
-            # 保存Profile文件（注意：Twitter使用CSV格式，Reddit使用JSON格式）
-            # Reddit 已经在生成过程中实时保存了，这里再保存一次确保完整性
+                if state.enable_reddit:
+                    realtime_output_path = os.path.join(sim_dir, "reddit_profiles.json")
+                elif state.enable_twitter:
+                    realtime_output_path = os.path.join(sim_dir, "twitter_profiles.csv")
+                    realtime_platform = "twitter"
+
+                profiles = generator.generate_profiles_from_entities(
+                    entities=filtered.entities,
+                    use_llm=use_llm_for_profiles,
+                    progress_callback=profile_progress,
+                    graph_id=state.graph_id,
+                    parallel_count=parallel_profile_count,
+                    realtime_output_path=realtime_output_path,
+                    output_platform=realtime_platform
+                )
+
+                state.profiles_count = len(profiles)
+
+                if state.enable_reddit:
+                    generator.save_profiles(
+                        profiles=profiles,
+                        file_path=os.path.join(sim_dir, "reddit_profiles.json"),
+                        platform="reddit"
+                    )
+                if state.enable_twitter:
+                    generator.save_profiles(
+                        profiles=profiles,
+                        file_path=os.path.join(sim_dir, "twitter_profiles.csv"),
+                        platform="twitter"
+                    )
+
             if progress_callback:
                 progress_callback(
-                    "generating_profiles", 95, 
-                    "保存Profile文件...",
-                    current=total_entities,
-                    total=total_entities
-                )
-            
-            if state.enable_reddit:
-                generator.save_profiles(
-                    profiles=profiles,
-                    file_path=os.path.join(sim_dir, "reddit_profiles.json"),
-                    platform="reddit"
-                )
-            
-            if state.enable_twitter:
-                # Twitter使用CSV格式！这是OASIS的要求
-                generator.save_profiles(
-                    profiles=profiles,
-                    file_path=os.path.join(sim_dir, "twitter_profiles.csv"),
-                    platform="twitter"
-                )
-            
-            if progress_callback:
-                progress_callback(
-                    "generating_profiles", 100, 
-                    f"完成，共 {len(profiles)} 个Profile",
-                    current=len(profiles),
-                    total=len(profiles)
+                    "generating_profiles", 100,
+                    f"Complete: {state.profiles_count} profiles",
+                    current=state.profiles_count,
+                    total=state.profiles_count
                 )
             
             # ========== 阶段3: LLM智能生成模拟配置 ==========

@@ -1,0 +1,20 @@
+{
+  "scenario_name": "Negotiation Success - Trump Deal (LOW PROBABILITY)",
+  "description": "What if Iran reverses its rejection and backchannel talks succeed despite public denial? Iran accepts modified demands, US/Israel halt strikes, Strait of Hormuz reopens. Note: Iran publicly rejected Trump's claim of talks on Mar 23 — this scenario requires a reversal.",
+  "overrides": {
+    "escalation_level": 5,
+    "phase": "de-escalation",
+    "active_negotiations": [
+      "Trump-Iran direct talks via Oman intermediary",
+      "IAEA inspection framework negotiation",
+      "Strait of Hormuz reopening protocol"
+    ]
+  },
+  "scenario_variables": {
+    "iran_accepts_partial_demands": true,
+    "us_offers_sanctions_relief": true,
+    "israel_accepts_deal": false,
+    "houthis_stand_down": true
+  },
+  "max_rounds": 15
+}

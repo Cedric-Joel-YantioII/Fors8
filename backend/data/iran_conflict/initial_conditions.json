@@ -1,0 +1,151 @@
+{
+  "scenario_name": "2026 US/Israel-Iran War - Active Conflict (March 23, 2026)",
+  "start_time": "2026-03-23T00:00:00Z",
+  "war_start_date": "2026-02-28",
+  "days_of_war": 23,
+
+  "phase": "conflict",
+  "escalation_level": 8,
+  "oil_price": 119.0,
+  "global_risk_index": 0.85,
+  "nuclear_threshold_status": "warning",
+  "humanitarian_impact": 0.6,
+
+  "strait_of_hormuz_open": false,
+  "bab_el_mandeb_open": true,
+  "suez_canal_open": true,
+
+  "active_conflicts": [
+    "US/Israel vs Iran (Operation Epic Fury)",
+    "Israel vs Hezbollah (2026 Lebanon War)",
+    "Iraqi PMF vs US bases in Iraq"
+  ],
+  "active_negotiations": [],
+  "negotiation_status": "COLLAPSED - Iran rejected Trump's claim of talks and 5-day ceasefire. No active negotiations.",
+
+  "key_events_timeline": [
+    {"date": "2026-02-28", "event": "Operation Epic Fury launched - 900 strikes in 12 hours"},
+    {"date": "2026-02-28", "event": "Ayatollah Ali Khamenei assassinated in Israeli airstrike"},
+    {"date": "2026-03-01", "event": "Iran retaliates - 500+ ballistic missiles, 2000+ drones"},
+    {"date": "2026-03-02", "event": "Hezbollah opens Lebanon front"},
+    {"date": "2026-03-09", "event": "Mojtaba Khamenei installed as new Supreme Leader by IRGC"},
+    {"date": "2026-03-12", "event": "Iran announces 3 demands to end war"},
+    {"date": "2026-03-14", "event": "Israel warns US: critically low on interceptors"},
+    {"date": "2026-03-17", "event": "Israel kills Ali Larijani, IRGC Commander Pakpour, Defense Minister"},
+    {"date": "2026-03-18", "event": "Israel strikes Iran Asaluyeh complex (South Pars gas field)"},
+    {"date": "2026-03-18", "event": "Iran retaliates: destroys Qatar Ras Laffan LNG (17% capacity), hits Kuwait/Saudi/UAE energy"},
+    {"date": "2026-03-19", "event": "Brent crude hits $119"},
+    {"date": "2026-03-20", "event": "Houthis declare 'all military options possible'"},
+    {"date": "2026-03-23", "event": "Trump announces 5-day pause on energy strikes via Truth Social"},
+    {"date": "2026-03-23", "event": "BREAKING: Iran REJECTS Trump's claim of talks and 5-day ceasefire. Denies any negotiations are taking place. No pause acknowledged."},
+    {"date": "2026-03-21", "event": "Iran strikes towns near Israel's Dimona nuclear facility — 180 wounded (116 in Arad, 64 in Dimona). First time Iranian missiles penetrate Israeli air defenses near nuclear site. IAEA confirms no damage to reactor, no abnormal radiation."},
+    {"date": "2026-03-21", "event": "Iran launches 2 intermediate-range ballistic missiles at Diego Garcia (US-UK base, Indian Ocean, 2000+ miles from Tehran). Missiles did not hit but demonstrated range capability reaching Western European capitals (Paris, Berlin, Rome). Iran denies, calls it 'false flag'."},
+    {"date": "2026-03-22", "event": "Israel's Chief of Staff confirms Iran's missiles can reach European capitals. Sejjil-3 development (4,000km range) under testing."},
+    {"date": "2026-03-19", "event": "Netanyahu claims Iran no longer has uranium enrichment capacity after strikes on nuclear sites."},
+    {"date": "2026-03-22", "event": "China's MizarVision satellite company publicly releasing high-res imagery of US military positions (F-22s at Prince Sultan Air Base, carrier groups). US accuses China of enabling Iranian attacks via commercial satellite intelligence. China denies."},
+    {"date": "2026-03-22", "event": "Al Jazeera reports Iran may be using China's BeiDou navigation system for missile guidance, bypassing GPS."}
+  ],
+
+  "casualty_estimates": {
+    "iran_military": 5300,
+    "iran_civilian": 500,
+    "israel_military": 150,
+    "israel_civilian": 200,
+    "us_military": 45,
+    "hezbollah": 800,
+    "gcc_civilian": 100,
+    "minab_school_incident": 170
+  },
+
+  "weapons_dynamics": {
+    "iran_sejjil_dancing_missile": {
+      "type": "Solid-fuel MRBM",
+      "range_km": 2000,
+      "feature": "High-altitude maneuvering evades missile defense",
+      "cost": "low",
+      "first_combat_use": "2026 (this war)",
+      "variant_in_development": "Sejjil-3 (4000km range)"
+    },
+    "iran_cluster_munitions": {
+      "description": "Added to ballistic missile warheads, forces multiple interceptor engagements per missile"
+    },
+    "israel_interceptor_crisis": {
+      "arrow_3_status": "critically depleted",
+      "davids_sling_status": "critically depleted",
+      "iron_dome_status": "depleted (focused on Lebanon front)",
+      "production_ramp": "Deal signed Dec 2025 but takes years",
+      "asymmetry": "Each Iranian salvo costs Israel 3-10x more to defend"
+    },
+    "iran_total_fired": {
+      "ballistic_missiles": 500,
+      "drones": 2000,
+      "as_of_date": "2026-03-05"
+    }
+  },
+
+  "energy_infrastructure_damage": {
+    "qatar_ras_laffan": {
+      "damage": "17% LNG capacity destroyed",
+      "repair_timeline": "3-5 years",
+      "annual_revenue_loss": "$20 billion",
+      "trains_damaged": 2,
+      "gtl_facilities_damaged": 1
+    },
+    "kuwait_refineries": "Damaged by Iranian strikes",
+    "saudi_refineries": "Damaged by Iranian strikes",
+    "uae_gas_facilities": "Closed preventatively",
+    "iran_asaluyeh": "4 gas treatment plants damaged by Israeli drone strike (South Pars)"
+  },
+
+  "iran_3_demands": {
+    "demand_1": "Recognition of Iran's legitimate rights",
+    "demand_2": "Payment of reparations for damages caused",
+    "demand_3": "Firm international guarantees against future aggression",
+    "ceasefire_position": "Iran rejects temporary ceasefire — demands permanent end to war with guarantees"
+  },
+
+  "nuclear_status": {
+    "iran_breakout_time_pre_war": "Less than 1 week for enough HEU for one bomb (DIA assessment May 2025)",
+    "iran_enriched_uranium_stockpile": "Enough 60% enriched uranium for 12+ weapons if further enriched (ODNI Nov 2024)",
+    "iran_enrichment_capacity_post_strikes": "Netanyahu claims destroyed. IAEA says material 'probably still there'. Natanz struck but underground facilities may survive.",
+    "jcpoa_restrictions_expired": "January 2026 — no longer legally constrained",
+    "dimona_strike_result": "180 wounded near Dimona. IAEA confirms no reactor damage, no radiation. But demonstrates Iran CAN target Israeli nuclear sites.",
+    "iran_nuclear_weapon_status": "Pre-war: could assemble a device in 6-12 months if decision made. Post-strikes: enrichment capacity degraded but not eliminated. Underground facilities may be intact."
+  },
+
+  "iran_missile_drone_stockpile": {
+    "pre_war_missile_estimate": "2,500 (Israel estimate) to 6,000 (analyst estimates)",
+    "pre_war_drone_estimate": "Several thousand to 10,000+",
+    "fired_so_far": "500+ ballistic missiles, 2000+ drones (as of Mar 5, CENTCOM)",
+    "remaining_capacity": "Analysts estimate 2-3 months of sustained operations",
+    "production_rate_drones": "~10,000 drones/month capacity (Centre for Information Resilience)",
+    "production_rate_missiles": "Ongoing but slower than drone production. Dual-use facilities can be retooled.",
+    "iran_official_claim": "IRGC says stockpile NOT depleted, production continues"
+  },
+
+  "iran_extended_range_capability": {
+    "diego_garcia_strike": "2 IRBMs launched at Diego Garcia (3,500km from Iran). Did not hit but demonstrated range. Iran denies, claims false flag.",
+    "european_range": "Sejjil-2 (2,400km) can reach southeastern Europe. Sejjil-3 under development (4,000km) would reach Paris, Berlin, Rome.",
+    "israel_chief_of_staff_statement": "Iran's missiles can reach European capitals",
+    "implication": "Iran's deterrence now extends beyond Middle East to NATO territory"
+  },
+
+  "china_intelligence_support": {
+    "satellite_imagery": "Chinese company MizarVision publicly releasing high-res satellite imagery of US military positions (F-22s at Prince Sultan Air Base, carrier groups). Sub-1-meter resolution.",
+    "jilin_1_constellation": "China's Jilin-1 satellite network provides near-continuous surveillance of US operations in Middle East",
+    "beidou_navigation": "Reports suggest Iran may be using China's BeiDou navigation system for missile guidance, bypassing GPS",
+    "us_accusation": "Deputy NSA Jon Finer accused China of enabling Iranian attacks via commercial satellite intel. China denies.",
+    "intelligence_value": "Real-time tracking of US military assets allows Iran to time attacks and avoid air patrols"
+  },
+
+  "israel_air_defense_collapse": {
+    "dimona_penetration": "First time Iranian missiles penetrated air defenses near nuclear facility (March 21)",
+    "interceptor_status": "Arrow 3, David's Sling, Iron Dome all critically depleted. IDF spokesman admitted failure to intercept 'not special or unfamiliar' missiles.",
+    "asymmetry_worsening": "Iran's cheap missiles vs Israel's expensive interceptors — ratio now catastrophic. Each salvo degrades defense further.",
+    "production_gap": "New interceptor production deal signed Dec 2025 but takes years to deliver. Israel entering defense gap."
+  },
+
+  "max_rounds": 30,
+  "geo_time_step_hours": 24,
+  "dual_llm_enabled": false
+}
