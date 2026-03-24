@@ -433,10 +433,20 @@ class SimulationRunner:
         else:
             cls._graph_memory_enabled[simulation_id] = False
         
-        # Determine which script to run
+        # Determine which path to take
         if platform == "geopolitical":
-            script_name = "run_geopolitical_simulation.py"
-        elif platform == "twitter":
+            # Run geopolitical engine in-process (no subprocess needed)
+            return cls._start_geopolitical_simulation(
+                simulation_id=simulation_id,
+                state=state,
+                config=config,
+                config_path=config_path,
+                sim_dir=sim_dir,
+                max_rounds=max_rounds,
+            )
+
+        # --- OASIS subprocess path (twitter / reddit / parallel) ---
+        if platform == "twitter":
             script_name = "run_twitter_simulation.py"
             state.twitter_running = True
         elif platform == "reddit":
@@ -446,68 +456,54 @@ class SimulationRunner:
             script_name = "run_parallel_simulation.py"
             state.twitter_running = True
             state.reddit_running = True
-        
+
         script_path = os.path.join(cls.SCRIPTS_DIR, script_name)
-        
+
         if not os.path.exists(script_path):
             raise ValueError(f"脚本不存在: {script_path}")
-        
+
         # 创建动作队列
         action_queue = Queue()
         cls._action_queues[simulation_id] = action_queue
-        
+
         # 启动模拟进程
         try:
-            # 构建运行命令，使用完整路径
-            # 新的日志结构：
-            #   twitter/actions.jsonl - Twitter 动作日志
-            #   reddit/actions.jsonl  - Reddit 动作日志
-            #   simulation.log        - 主进程日志
-            
             cmd = [
-                sys.executable,  # Python解释器
+                sys.executable,
                 script_path,
-                "--config", config_path,  # 使用完整配置文件路径
+                "--config", config_path,
             ]
-            
-            # 如果指定了最大轮数，添加到命令行参数
+
             if max_rounds is not None and max_rounds > 0:
                 cmd.extend(["--max-rounds", str(max_rounds)])
-            
-            # 创建主日志文件，避免 stdout/stderr 管道缓冲区满导致进程阻塞
+
             main_log_path = os.path.join(sim_dir, "simulation.log")
             main_log_file = open(main_log_path, 'w', encoding='utf-8')
-            
-            # 设置子进程环境变量，确保 Windows 上使用 UTF-8 编码
-            # 这可以修复第三方库（如 OASIS）读取文件时未指定编码的问题
+
             env = os.environ.copy()
-            env['PYTHONUTF8'] = '1'  # Python 3.7+ 支持，让所有 open() 默认使用 UTF-8
-            env['PYTHONIOENCODING'] = 'utf-8'  # 确保 stdout/stderr 使用 UTF-8
-            
-            # 设置工作目录为模拟目录（数据库等文件会生成在此）
-            # 使用 start_new_session=True 创建新的进程组，确保可以通过 os.killpg 终止所有子进程
+            env['PYTHONUTF8'] = '1'
+            env['PYTHONIOENCODING'] = 'utf-8'
+
             process = subprocess.Popen(
                 cmd,
                 cwd=sim_dir,
                 stdout=main_log_file,
-                stderr=subprocess.STDOUT,  # stderr 也写入同一个文件
+                stderr=subprocess.STDOUT,
                 text=True,
-                encoding='utf-8',  # 显式指定编码
+                encoding='utf-8',
                 bufsize=1,
-                env=env,  # 传递带有 UTF-8 设置的环境变量
-                start_new_session=True,  # 创建新进程组，确保服务器关闭时能终止所有相关进程
+                env=env,
+                start_new_session=True,
             )
-            
-            # 保存文件句柄以便后续关闭
+
             cls._stdout_files[simulation_id] = main_log_file
-            cls._stderr_files[simulation_id] = None  # 不再需要单独的 stderr
-            
+            cls._stderr_files[simulation_id] = None
+
             state.process_pid = process.pid
             state.runner_status = RunnerStatus.RUNNING
             cls._processes[simulation_id] = process
             cls._save_run_state(state)
-            
-            # 启动监控线程
+
             monitor_thread = threading.Thread(
                 target=cls._monitor_simulation,
                 args=(simulation_id,),
@@ -515,15 +511,280 @@ class SimulationRunner:
             )
             monitor_thread.start()
             cls._monitor_threads[simulation_id] = monitor_thread
-            
+
             logger.info(f"模拟启动成功: {simulation_id}, pid={process.pid}, platform={platform}")
-            
+
         except Exception as e:
             state.runner_status = RunnerStatus.FAILED
             state.error = str(e)
             cls._save_run_state(state)
             raise
-        
+
+        return state
+
+    @classmethod
+    def _start_geopolitical_simulation(
+        cls,
+        simulation_id: str,
+        state: SimulationRunState,
+        config: dict,
+        config_path: str,
+        sim_dir: str,
+        max_rounds: Optional[int] = None,
+    ) -> SimulationRunState:
+        """
+        Run the GeopoliticalEngine in-process on a background thread.
+
+        This avoids subprocess overhead and feeds actions directly into the
+        SimulationRunState so the frontend can display them in real time.
+        """
+        from ..utils.llm_client import LLMClient
+        from .world_state import (
+            ActorState, ActorTier, WorldState, ActionType, ActionDomain, ACTION_DOMAIN_MAP,
+        )
+        from .consequence_engine import ConsequenceEngine
+        from .geopolitical_engine import GeopoliticalEngine
+
+        # --- Load actor profiles ---
+        profiles_path = os.path.join(sim_dir, "actor_profiles.json")
+        if not os.path.exists(profiles_path):
+            raise ValueError(f"actor_profiles.json not found in {sim_dir}, run /prepare first")
+        with open(profiles_path, 'r', encoding='utf-8') as f:
+            profiles_list = json.load(f)
+        profiles = {p["actor_id"]: p for p in profiles_list}
+
+        if not profiles:
+            raise ValueError("No actor profiles found. Run prepare_simulation first.")
+
+        # --- Determine max rounds & time step ---
+        time_config = config.get("time_config", {})
+        total_hours = time_config.get("total_simulation_hours", 720)
+        hours_per_round = config.get("geo_time_step_hours", 24)
+        effective_max_rounds = max_rounds or config.get("max_rounds", 30)
+
+        # Update state totals
+        state.total_rounds = effective_max_rounds
+        state.total_simulation_hours = total_hours
+
+        # --- Build initial world state ---
+        world_state = WorldState()
+        initial = config.get("initial_conditions", {})
+        world_state.escalation_level = initial.get("escalation_level", 5)
+        world_state.oil_price = initial.get("oil_price", 90.0)
+        world_state.strait_of_hormuz_open = initial.get("strait_of_hormuz_open", False)
+        world_state.bab_el_mandeb_open = initial.get("bab_el_mandeb_open", True)
+        world_state.suez_canal_open = initial.get("suez_canal_open", True)
+        world_state.active_conflicts = initial.get("active_conflicts", [])
+        world_state.active_negotiations = initial.get("active_negotiations", [])
+        world_state.nuclear_threshold_status = initial.get("nuclear_threshold_status", "warning")
+        world_state.phase = initial.get("phase", "conflict")
+
+        for actor_id, profile in profiles.items():
+            tier_str = profile.get("tier", "operational")
+            try:
+                tier = ActorTier(tier_str)
+            except ValueError:
+                tier = ActorTier.OPERATIONAL
+
+            actor = ActorState(
+                actor_id=actor_id,
+                actor_name=profile.get("actor_name", actor_id),
+                actor_type=profile.get("actor_type", "Organization"),
+                tier=tier,
+                force_strength=float(profile.get("initial_force_strength", 50)),
+                domestic_approval=float(profile.get("initial_domestic_approval", 0.5)),
+                interceptor_inventory=float(profile.get("initial_interceptor_inventory", 1.0)),
+                missile_inventory=float(profile.get("initial_missile_inventory", 1.0)),
+                risk_tolerance=float(profile.get("risk_tolerance", 0.5)),
+                escalation_threshold=float(profile.get("escalation_threshold", 0.5)),
+                negotiation_willingness=float(profile.get("negotiation_willingness", 0.5)),
+                casualty_threshold=float(profile.get("casualty_threshold", 0.5)),
+                martyrdom_willingness=float(profile.get("martyrdom_willingness", 0.0)),
+                eschatological_factor=float(profile.get("eschatological_factor", 0.0)),
+                regime_survival_priority=float(profile.get("regime_survival_priority", 0.5)),
+            )
+
+            intel_vis = profile.get("initial_intel_visibility", {})
+            for ally in profile.get("alliance_network", []):
+                ally_id = ally.lower().replace(" ", "_")
+                intel_vis[ally_id] = intel_vis.get(ally_id, 0.8)
+            for adversary in profile.get("adversaries", []):
+                adversary_id = adversary.lower().replace(" ", "_")
+                intel_vis[adversary_id] = intel_vis.get(adversary_id, 0.4)
+            actor.intel_visibility = intel_vis
+
+            world_state.actors[actor_id] = actor
+
+        # --- Initialize LLM client ---
+        # Prefer VLLM_ENDPOINT if set (local vLLM server), otherwise fall back to configured LLM
+        vllm_endpoint = os.environ.get('VLLM_ENDPOINT', '')
+        if vllm_endpoint:
+            vllm_model = os.environ.get('VLLM_MODEL', 'default')
+            llm_client = LLMClient(
+                api_key="EMPTY",
+                base_url=vllm_endpoint,
+                model=vllm_model,
+            )
+            logger.info(f"Using vLLM endpoint for geopolitical sim: {vllm_endpoint}")
+        else:
+            llm_client = LLMClient()
+
+        # Dual LLM
+        dual_llm_client = None
+        use_dual_llm = config.get("dual_llm_enabled", False)
+        if use_dual_llm:
+            from ..config import Config as AppConfig
+            if getattr(AppConfig, 'DUAL_LLM_API_KEY', None):
+                dual_llm_client = LLMClient(
+                    api_key=AppConfig.DUAL_LLM_API_KEY,
+                    base_url=AppConfig.DUAL_LLM_BASE_URL,
+                    model=AppConfig.DUAL_LLM_MODEL_NAME,
+                )
+
+        # --- Consequence engine ---
+        from ..config import Config as AppConfig
+        rules_path = config.get("rules_path", getattr(AppConfig, 'GEO_RULES_PATH', '')) or None
+        consequence_engine = ConsequenceEngine(rules_path=rules_path)
+
+        # --- Build engine ---
+        engine = GeopoliticalEngine(
+            llm_client=llm_client,
+            consequence_engine=consequence_engine,
+            dual_llm_client=dual_llm_client,
+            use_dual_llm=use_dual_llm,
+            actor_profiles=profiles,
+        )
+
+        # --- Set up callbacks that feed into SimulationRunState ---
+        actions_log_path = os.path.join(sim_dir, "geopolitical_actions.jsonl")
+
+        def _write_action_log(entry: dict):
+            with open(actions_log_path, 'a', encoding='utf-8') as f:
+                f.write(json.dumps(entry, ensure_ascii=False) + '\n')
+
+        def on_action_resolved(event, resolution):
+            """Feed each resolved action into the run state AND the JSONL log."""
+            domain_str = event.action_domain.value if hasattr(event.action_domain, 'value') else str(event.action_domain)
+            action = AgentAction(
+                round_num=event.round_num,
+                timestamp=event.timestamp,
+                action_domain=domain_str,
+                agent_id=event.actor_id,
+                agent_name=event.actor_name,
+                action_type=event.action_type.value if hasattr(event.action_type, 'value') else str(event.action_type),
+                target_name=event.target_actor_name,
+                result=event.consequence_summary,
+                reasoning=event.reasoning,
+                escalation_delta=event.escalation_delta,
+            )
+            state.add_action(action)
+
+            _write_action_log({
+                "round": event.round_num,
+                "timestamp": event.timestamp,
+                "actor": event.actor_name,
+                "actor_id": event.actor_id,
+                "action_type": event.action_type.value if hasattr(event.action_type, 'value') else str(event.action_type),
+                "action_domain": domain_str,
+                "target": event.target_actor_name,
+                "reasoning": event.reasoning,
+                "consequence": event.consequence_summary,
+                "escalation_delta": event.escalation_delta,
+            })
+
+        def on_round_complete(ws):
+            """Update run state with round-level info and write snapshot."""
+            state.current_round = ws.round_num
+            state.escalation_level = ws.escalation_level
+            state.current_phase = ws.phase
+            state.simulated_hours = ws.round_num * hours_per_round
+            state.world_state_snapshot = ws.snapshot()
+            cls._save_run_state(state)
+
+            _write_action_log({
+                "type": "round_complete",
+                "round": ws.round_num,
+                "escalation_level": ws.escalation_level,
+                "phase": ws.phase,
+                "oil_price": ws.oil_price,
+                "timestamp": ws.simulated_time,
+            })
+
+            # Write latest world state snapshot to disk
+            snapshot_path = os.path.join(sim_dir, "world_state_latest.json")
+            with open(snapshot_path, 'w', encoding='utf-8') as f:
+                json.dump(ws.snapshot(), f, ensure_ascii=False, indent=2)
+
+        engine.on_action_resolved = on_action_resolved
+        engine.on_round_complete = on_round_complete
+
+        start_time = config.get("start_time", datetime.now().isoformat() + "Z")
+
+        # Write simulation start marker
+        _write_action_log({
+            "type": "simulation_start",
+            "timestamp": datetime.now().isoformat(),
+            "actors": len(profiles),
+            "max_rounds": effective_max_rounds,
+            "start_time": start_time,
+            "escalation_level": world_state.escalation_level,
+        })
+
+        state.runner_status = RunnerStatus.RUNNING
+        cls._save_run_state(state)
+
+        # --- Run engine on a background thread ---
+        def _run():
+            try:
+                final_state = engine.run_simulation(
+                    world_state=world_state,
+                    max_rounds=effective_max_rounds,
+                    time_step_hours=hours_per_round,
+                    start_time=start_time,
+                )
+
+                # Write final artifacts
+                final_snapshot = final_state.snapshot()
+                with open(os.path.join(sim_dir, "world_state_final.json"), 'w', encoding='utf-8') as f:
+                    json.dump(final_snapshot, f, ensure_ascii=False, indent=2)
+                with open(os.path.join(sim_dir, "round_summaries.json"), 'w', encoding='utf-8') as f:
+                    json.dump(final_state.round_summaries, f, ensure_ascii=False, indent=2)
+
+                _write_action_log({
+                    "type": "simulation_end",
+                    "timestamp": datetime.now().isoformat(),
+                    "final_round": final_state.round_num,
+                    "final_escalation": final_state.escalation_level,
+                    "final_phase": final_state.phase,
+                    "total_events": len(final_state.events),
+                })
+
+                state.runner_status = RunnerStatus.COMPLETED
+                state.completed_at = datetime.now().isoformat()
+                state.world_state_snapshot = final_snapshot
+                logger.info(f"Geopolitical simulation completed: {simulation_id}, "
+                            f"rounds={final_state.round_num}, escalation={final_state.escalation_level}")
+
+            except Exception as e:
+                logger.error(f"Geopolitical simulation failed: {simulation_id}, error={e}")
+                state.runner_status = RunnerStatus.FAILED
+                state.error = str(e)
+            finally:
+                cls._save_run_state(state)
+                if cls._graph_memory_enabled.get(simulation_id, False):
+                    try:
+                        ZepGraphMemoryManager.stop_updater(simulation_id)
+                    except Exception:
+                        pass
+                    cls._graph_memory_enabled.pop(simulation_id, None)
+
+        geo_thread = threading.Thread(target=_run, daemon=True, name=f"geo-sim-{simulation_id}")
+        geo_thread.start()
+        cls._monitor_threads[simulation_id] = geo_thread
+
+        logger.info(f"Geopolitical simulation started in-process: {simulation_id}, "
+                     f"actors={len(profiles)}, max_rounds={effective_max_rounds}")
+
         return state
     
     @classmethod

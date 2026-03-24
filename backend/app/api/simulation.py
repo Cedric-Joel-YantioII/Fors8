@@ -1090,23 +1090,34 @@ def get_simulation_profiles_realtime(simulation_id: str):
             }), 404
         
         # 确定文件路径
-        if platform == "reddit":
+        if platform == "geopolitical":
+            profiles_file = os.path.join(sim_dir, "actor_profiles.json")
+        elif platform == "reddit":
             profiles_file = os.path.join(sim_dir, "reddit_profiles.json")
         else:
             profiles_file = os.path.join(sim_dir, "twitter_profiles.csv")
-        
+
         # 检查文件是否存在
         file_exists = os.path.exists(profiles_file)
         profiles = []
         file_modified_at = None
-        
+
+        # Auto-detect geopolitical: if actor_profiles.json exists and the
+        # requested platform file does not, fall back to geopolitical profiles
+        if not file_exists and platform in ("reddit", "twitter"):
+            geo_profiles_file = os.path.join(sim_dir, "actor_profiles.json")
+            if os.path.exists(geo_profiles_file):
+                profiles_file = geo_profiles_file
+                file_exists = True
+                platform = "geopolitical"
+
         if file_exists:
             # 获取文件修改时间
             file_stat = os.stat(profiles_file)
             file_modified_at = datetime.fromtimestamp(file_stat.st_mtime).isoformat()
-            
+
             try:
-                if platform == "reddit":
+                if platform in ("reddit", "geopolitical"):
                     with open(profiles_file, 'r', encoding='utf-8') as f:
                         profiles = json.load(f)
                 else:
@@ -2360,10 +2371,10 @@ def interview_agents_batch():
             }), 400
 
         # 验证platform参数
-        if platform and platform not in ("twitter", "reddit"):
+        if platform and platform not in ("twitter", "reddit", "geopolitical"):
             return jsonify({
                 "success": False,
-                "error": "platform 参数只能是 'twitter' 或 'reddit'"
+                "error": "platform 参数只能是 'twitter'、'reddit' 或 'geopolitical'"
             }), 400
 
         # 验证每个采访项
@@ -2380,10 +2391,10 @@ def interview_agents_batch():
                 }), 400
             # 验证每项的platform（如果有）
             item_platform = interview.get('platform')
-            if item_platform and item_platform not in ("twitter", "reddit"):
+            if item_platform and item_platform not in ("twitter", "reddit", "geopolitical"):
                 return jsonify({
                     "success": False,
-                    "error": f"采访列表第{i+1}项的platform只能是 'twitter' 或 'reddit'"
+                    "error": f"采访列表第{i+1}项的platform只能是 'twitter'、'reddit' 或 'geopolitical'"
                 }), 400
 
         # 检查环境状态
@@ -2487,10 +2498,10 @@ def interview_all_agents():
             }), 400
 
         # 验证platform参数
-        if platform and platform not in ("twitter", "reddit"):
+        if platform and platform not in ("twitter", "reddit", "geopolitical"):
             return jsonify({
                 "success": False,
-                "error": "platform 参数只能是 'twitter' 或 'reddit'"
+                "error": "platform 参数只能是 'twitter'、'reddit' 或 'geopolitical'"
             }), 400
 
         # 检查环境状态

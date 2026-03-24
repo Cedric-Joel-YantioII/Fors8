@@ -123,10 +123,10 @@
                   class="dropdown-item"
                   @click="selectAgent(agent, idx)"
                 >
-                  <div class="agent-avatar">{{ (agent.username || 'A')[0] }}</div>
+                  <div class="agent-avatar">{{ (agent.username || agent.actor_name || 'A')[0] }}</div>
                   <div class="agent-info">
-                    <span class="agent-name">{{ agent.username }}</span>
-                    <span class="agent-role">{{ agent.profession || 'Unknown' }}</span>
+                    <span class="agent-name">{{ agent.username || agent.actor_name }}</span>
+                    <span class="agent-role">{{ agent.profession || agent.actor_type || 'Unknown' }}</span>
                   </div>
                 </div>
               </div>
@@ -332,10 +332,10 @@
                     :checked="selectedAgents.has(idx)"
                     @change="toggleAgentSelection(idx)"
                   >
-                  <div class="checkbox-avatar">{{ (agent.username || 'A')[0] }}</div>
+                  <div class="checkbox-avatar">{{ (agent.username || agent.actor_name || 'A')[0] }}</div>
                   <div class="checkbox-info">
-                    <span class="checkbox-name">{{ agent.username }}</span>
-                    <span class="checkbox-role">{{ agent.profession || 'Unknown' }}</span>
+                    <span class="checkbox-name">{{ agent.username || agent.actor_name }}</span>
+                    <span class="checkbox-role">{{ agent.profession || agent.actor_type || 'Unknown' }}</span>
                   </div>
                   <div class="checkbox-indicator">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3">
