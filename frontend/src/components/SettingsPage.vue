@@ -152,15 +152,20 @@
                 <label>Vast.ai API Key <span class="optional">(for auto-provisioning)</span></label>
                 <input type="password" v-model="vastaiKey" placeholder="Your Vast.ai API key" />
               </div>
-              <p class="provision-note">Fors8 automatically provisions and destroys GPU instances. Instances auto-shutdown after 10 minutes of inactivity to save costs.</p>
-              <div class="form-group">
-                <label>Auto-shutdown after inactivity</label>
-                <select v-model.number="idleTimeout">
-                  <option :value="5">5 minutes</option>
-                  <option :value="10">10 minutes (recommended)</option>
-                  <option :value="30">30 minutes</option>
-                  <option :value="60">1 hour</option>
-                </select>
+              <p class="provision-note">Fors8 auto-provisions a GPU when you ask your first question. The instance stays running so follow-up questions are instant. Kill it manually when you're done to stop billing.</p>
+
+              <!-- GPU Status + Kill Button -->
+              <div v-if="gpuStatus && gpuStatus.status !== 'destroyed' && gpuStatus.status !== 'no_instance'" class="gpu-status-card">
+                <div class="gpu-status-header">
+                  <span class="gpu-status-dot" :class="gpuStatus.status"></span>
+                  <span class="gpu-status-label">{{ gpuStatus.gpu_type || 'GPU' }} — {{ gpuStatus.model || 'loading' }}</span>
+                </div>
+                <div class="gpu-status-meta">
+                  <span>{{ gpuStatus.uptime_display || '0m' }} uptime</span>
+                  <span>${{ (gpuStatus.cost_so_far || 0).toFixed(2) }} spent</span>
+                  <span>{{ gpuStatus.status }}</span>
+                </div>
+                <button class="btn-destroy" @click="destroyGpu">Stop GPU Instance</button>
               </div>
               <div class="form-divider"><span>or</span></div>
               <div class="form-group">
@@ -271,7 +276,7 @@ export default {
         },
       ],
 
-      idleTimeout: 10,
+      gpuStatus: null,
 
       vllmModels: [
         { id: 'qwen2.5:72b', name: 'Qwen 2.5 72B', gpus: '2× A100 (80GB)', costPerHour: 0.30, sizeGb: 42, strengths: 'Best JSON reliability. Recommended for war prediction.' },
@@ -325,8 +330,8 @@ export default {
         if (savedVllmEndpoint) this.vllmEndpoint = savedVllmEndpoint
         const savedVllmModel = localStorage.getItem('fors8_vllm_model')
         if (savedVllmModel) this.selectedVllmModel = savedVllmModel
-        const savedIdleTimeout = localStorage.getItem('fors8_idle_timeout')
-        if (savedIdleTimeout) this.idleTimeout = Number(savedIdleTimeout)
+        const savedVastKey = localStorage.getItem('fors8_vastai_key')
+        if (savedVastKey) this.vastaiKey = savedVastKey
       }
     }
   },
@@ -383,15 +388,52 @@ export default {
     },
     provisionGpus() {
       localStorage.setItem('fors8_vllm_model', this.selectedVllmModel)
-      localStorage.setItem('fors8_idle_timeout', this.idleTimeout)
       localStorage.setItem('fors8_provider', 'vllm')
       if (this.vllmEndpoint) {
         localStorage.setItem('fors8_vllm_endpoint', this.vllmEndpoint)
         alert('Connected')
-      } else {
-        alert('Launching GPUs on Vast.ai...')
+      } else if (this.vastaiKey) {
+        localStorage.setItem('fors8_vastai_key', this.vastaiKey)
+        alert('Vast.ai key saved. GPU will auto-provision when you ask your first question.')
       }
     },
+    async fetchGpuStatus() {
+      try {
+        const resp = await fetch('/api/predict/gpu/status')
+        if (resp.ok) this.gpuStatus = await resp.json()
+      } catch (e) { /* ignore */ }
+    },
+    async destroyGpu() {
+      if (!confirm('Stop the GPU instance? You can re-provision anytime by asking a new question.')) return
+      try {
+        await fetch('/api/predict/gpu/destroy', { method: 'POST' })
+        this.gpuStatus = null
+        alert('GPU instance destroyed. Billing stopped.')
+      } catch (e) {
+        alert('Failed to destroy: ' + e.message)
+      }
+    },
+  },
+  mounted() {
+    // Restore saved settings
+    const p = localStorage.getItem('fors8_provider')
+    if (p) this.selectedProvider = p
+    const k = localStorage.getItem('fors8_api_key')
+    if (k) this.apiKey = k
+    const ork = localStorage.getItem('fors8_api_key')
+    if (p === 'openrouter' && ork) this.openrouterKey = ork
+    const vk = localStorage.getItem('fors8_vastai_key')
+    if (vk) this.vastaiKey = vk
+    const vm = localStorage.getItem('fors8_vllm_model')
+    if (vm) this.selectedVllmModel = vm
+    const ve = localStorage.getItem('fors8_vllm_endpoint')
+    if (ve) this.vllmEndpoint = ve
+    // Poll GPU status
+    this.fetchGpuStatus()
+    this._gpuPoll = setInterval(() => this.fetchGpuStatus(), 10000)
+  },
+  beforeUnmount() {
+    if (this._gpuPoll) clearInterval(this._gpuPoll)
   }
 }
 </script>
@@ -830,6 +872,57 @@ export default {
   border-radius: 8px;
   border: 1px solid #eee;
 }
+
+.gpu-status-card {
+  border: 1px solid #e8e8e8;
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  background: #fafafa;
+}
+
+.gpu-status-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
+.gpu-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ccc;
+}
+.gpu-status-dot.running, .gpu-status-dot.ready { background: #22c55e; }
+.gpu-status-dot.idle { background: #eab308; }
+.gpu-status-dot.provisioning, .gpu-status-dot.loading { background: #3b82f6; }
+
+.gpu-status-meta {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: #888;
+  margin-bottom: 10px;
+  font-family: 'DM Mono', monospace;
+}
+
+.btn-destroy {
+  width: 100%;
+  padding: 8px;
+  background: #fff;
+  border: 1px solid #e00;
+  border-radius: 8px;
+  color: #e00;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+.btn-destroy:hover { background: #fef2f2; }
 
 .scale-grid {
   display: grid;

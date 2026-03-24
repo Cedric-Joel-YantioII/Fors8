@@ -124,3 +124,26 @@ def get_prediction(prediction_id: str):
         return jsonify({"error": "Prediction not found"}), 404
 
     return jsonify(job.to_dict())
+
+
+@predict_bp.route('/gpu/status', methods=['GET'])
+def gpu_status():
+    """Get GPU instance status — is it running, idle, cost so far."""
+    try:
+        from ..services.gpu_lifecycle import get_gpu_lifecycle
+        lifecycle = get_gpu_lifecycle()
+        return jsonify(lifecycle.get_status())
+    except Exception as e:
+        return jsonify({"status": "unavailable", "error": str(e)})
+
+
+@predict_bp.route('/gpu/destroy', methods=['POST'])
+def gpu_destroy():
+    """Manually destroy the GPU instance to stop billing."""
+    try:
+        from ..services.gpu_lifecycle import get_gpu_lifecycle
+        lifecycle = get_gpu_lifecycle()
+        lifecycle.destroy(reason="manual_user_request")
+        return jsonify({"success": True, "message": "GPU instance destroyed."})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

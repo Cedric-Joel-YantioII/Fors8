@@ -64,8 +64,10 @@ OLLAMA_MODELS = {
 
 VAST_API_BASE = "https://console.vast.ai/api/v0"
 
-# Default idle timeout before auto-destroy (seconds)
-DEFAULT_IDLE_TIMEOUT = int(os.environ.get("GPU_IDLE_TIMEOUT_SECONDS", "600"))
+# Default idle timeout before auto-destroy (seconds).
+# Set to 0 to disable auto-destroy (manual kill only — recommended for spot instances
+# since they bill by the hour, so auto-killing at 10min wastes 50min of paid time).
+DEFAULT_IDLE_TIMEOUT = int(os.environ.get("GPU_IDLE_TIMEOUT_SECONDS", "0"))  # 0 = no auto-kill (manual only)
 # Background watchdog poll interval
 WATCHDOG_INTERVAL = 30
 
@@ -681,6 +683,10 @@ class GPULifecycleManager:
             if self._watchdog_stop.is_set():
                 break
 
+            # Skip auto-destroy if timeout is 0 (manual kill only)
+            if self.idle_timeout <= 0:
+                continue
+
             with self._lock:
                 if self._status not in ("idle", "ready"):
                     continue
@@ -689,7 +695,6 @@ class GPULifecycleManager:
                 idle_seconds = time.time() - self._last_activity
                 if idle_seconds < self.idle_timeout:
                     continue
-                # Idle timeout exceeded
                 instance_id = self._instance_id
                 dph = self._offer_dph
 
