@@ -1,0 +1,853 @@
+{
+  "metadata": {
+    "title": "Strategic Infrastructure & Vulnerability Assessment: Iran Conflict Theater",
+    "version": "1.0",
+    "last_updated": "2026-03-25",
+    "purpose": "Factual reference data for geopolitical simulation engine",
+    "disclaimer": "Data compiled from open-source intelligence, government reports, and academic sources"
+  },
+
+  "iran_geography": {
+    "description": "Iran's geography makes ground invasion extraordinarily difficult — arguably impossible at scale in modern warfare",
+    "total_area_km2": 1648195,
+    "total_area_mi2": 636372,
+    "terrain_breakdown": {
+      "mountains_and_foothills_pct": 33,
+      "desert_and_arid_pct": 55,
+      "agricultural_and_urban_pct": 12,
+      "notes": "Roughly one-third rugged mountains (Zagros and Alborz ranges), over half arid desert (Dasht-e Kavir, Dasht-e Lut), remainder cultivated or urban"
+    },
+    "zagros_mountains": {
+      "description": "Natural fortress running 1,500 km from northwest to southeast Iran, forming the western defensive barrier",
+      "length_km": 1500,
+      "average_elevation_m": 3000,
+      "highest_peak": "Dena (4,409 m)",
+      "key_passes": ["Paytak Pass", "Pataq Pass", "Tang-e Haft", "Dalaki Pass"],
+      "military_significance": "Folded sedimentary rock layers create irregular terrain that impedes mechanized movement and complicates targeting. Historical invasion routes through Zagros passes are narrow, easily defended chokepoints.",
+      "source": "Britannica; CIA World Factbook"
+    },
+    "alborz_mountains": {
+      "description": "Northern mountain range protecting Tehran from the Caspian littoral",
+      "highest_peak": "Mount Damavand (5,610 m)",
+      "military_significance": "Shields Tehran from northern approach; extremely limited road access through passes"
+    },
+    "distances_border_to_tehran_km": {
+      "iraq_border_to_tehran": 650,
+      "turkey_border_to_tehran": 700,
+      "afghanistan_border_to_tehran": 950,
+      "pakistan_border_to_tehran": 1500,
+      "persian_gulf_coast_to_tehran": 900,
+      "turkmenistan_border_to_tehran": 400,
+      "notes": "All distances approximate as-the-crow-flies. Road distances significantly longer due to mountain terrain. Baghdad to Tehran driving distance is 877 km across Zagros Mountains."
+    },
+    "historical_invasion_context": {
+      "summary": "Iran has not been successfully conquered and occupied in modern history. Anglo-Soviet invasion of 1941 succeeded only because Reza Shah capitulated after 6 days — and that involved two great powers attacking simultaneously from north and south with Iran's military ordered to stand down.",
+      "key_precedents": [
+        "1941 Anglo-Soviet invasion: Required simultaneous north-south attack; Iran's military stood down by royal order",
+        "1980-1988 Iran-Iraq War: Iraq invaded with surprise and superior equipment; failed to advance beyond border regions despite 8 years of war",
+        "Alexander the Great (330 BC): Took years to subdue Iranian plateau even with Persian Empire already collapsing"
+      ],
+      "source": "Various historical analyses"
+    },
+    "population": {
+      "total_2025": 92400000,
+      "total_2026_projected": 93170000,
+      "male_population": 47310000,
+      "military_age_males_15_49": 24000000,
+      "military_age_males_18_40_conscription_eligible": 18000000,
+      "active_military_personnel": 610000,
+      "irgc_personnel": 190000,
+      "basij_militia_mobilizable": 1000000,
+      "total_mobilizable_estimate": 2000000,
+      "notes": "Iran has mandatory 18-month military service for males. Basij militia is a volunteer paramilitary force with estimated 1M+ who could be mobilized. Total wartime mobilization capacity estimated at 2M+.",
+      "source": "Worldometer; CIA World Factbook; IISS Military Balance"
+    },
+    "underground_facilities": {
+      "fordow": {
+        "location": "Near Qom, 160 km south of Tehran",
+        "depth_under_rock_m": 80,
+        "rock_type": "Hard sedimentary limestone and dolomite",
+        "bunker_buster_vulnerability": "US GBU-57 MOP (30,000 lb) may not penetrate; would require multiple sequential strikes on same point",
+        "notes": "Built inside mountain in Zagros range. Geological folding creates irregular layers that impede shockwave transmission.",
+        "source": "ISIS Reports; IAEA; JFeed geological analysis"
+      },
+      "natanz": {
+        "location": "Isfahan Province, central Iran",
+        "original_depth_m": 8,
+        "new_tunnel_complex_depth_m": 80,
+        "new_tunnel_complex_name": "Kuh-e Kolang Gaz La (Pickaxe Mountain)",
+        "estimated_depth_range_ft": "260-330",
+        "notes": "Original above-ground centrifuge halls were vulnerable (hit in 2026 strikes). New underground complex tunneled into Zagros mountains, approximately 1 mile south of original facility. Depth may exceed Fordow.",
+        "source": "ISIS Reports; IAEA reports"
+      },
+      "other_suspected_sites": [
+        "Parchin military complex (explosive testing)",
+        "Underground missile production facilities (multiple locations in Zagros)",
+        "IRGC underground naval bases along Persian Gulf coast",
+        "Underground aircraft hangars (multiple airbases)"
+      ]
+    },
+    "infrastructure_limitations_for_invading_force": {
+      "road_network": "Limited highway corridors through mountain passes; easily blocked or destroyed",
+      "rail_network": "Single-track rail lines with limited capacity; no high-speed rail to border regions",
+      "bridges": "Critical chokepoints — relatively few bridges across major rivers and gorges",
+      "supply_line_vulnerability": "Any force advancing from Iraq border faces 650+ km supply line through mountain terrain with constant ambush risk",
+      "urban_warfare": "Tehran metro area: 16M+ people. Isfahan, Shiraz, Tabriz each 2M+. Urban warfare would be catastrophic.",
+      "climate": "Extreme heat in south (50°C+), extreme cold in mountains (-30°C winter), sandstorms in desert regions"
+    }
+  },
+
+  "undersea_internet_cables": {
+    "overview": {
+      "total_cables_through_strait_of_hormuz": 17,
+      "total_cables_through_red_sea": 17,
+      "percentage_global_internet_through_hormuz": 30,
+      "percentage_global_internet_through_red_sea": 18,
+      "total_undersea_cable_share_of_global_traffic_pct": 99,
+      "notes": "Combined Hormuz + Red Sea corridor carries critical intercontinental traffic between Europe, Asia, and Africa. These two chokepoints carry a combined ~30% of global internet traffic.",
+      "source": "TeleGeography; Submarine Networks; Rest of World"
+    },
+    "major_cables_through_hormuz_and_gulf": [
+      {
+        "name": "FLAG (Fiber-optic Link Around the Globe)",
+        "route": "UK to Japan via Mediterranean, Egypt, Gulf",
+        "length_km": 28000,
+        "landing_stations_in_region": ["Fujairah (UAE)", "Mumbai (India)"],
+        "operator": "Reliance Globalcom",
+        "status": "Active"
+      },
+      {
+        "name": "SEA-ME-WE 3 (South East Asia–Middle East–Western Europe 3)",
+        "route": "Germany to Australia/Japan via Mediterranean, Red Sea, Indian Ocean",
+        "length_km": 39000,
+        "landing_stations_in_region": ["Fujairah (UAE)", "Karachi (Pakistan)"],
+        "operator": "Consortium (Singtel lead)",
+        "status": "Active"
+      },
+      {
+        "name": "SEA-ME-WE 4",
+        "route": "France to Singapore via Mediterranean, Egypt, Gulf",
+        "length_km": 20000,
+        "landing_stations_in_region": ["Fujairah (UAE)", "Karachi (Pakistan)"],
+        "operator": "Consortium (Tata lead)",
+        "status": "Active"
+      },
+      {
+        "name": "SEA-ME-WE 5",
+        "route": "France to Singapore via Mediterranean, Red Sea, Indian Ocean",
+        "length_km": 20000,
+        "landing_stations_in_region": ["Oman", "Sri Lanka"],
+        "operator": "Consortium",
+        "status": "Active"
+      },
+      {
+        "name": "SEA-ME-WE 6 / Al Khaleej Cable System",
+        "route": "Singapore to France with Gulf Extension through Strait of Hormuz",
+        "length_km": 19200,
+        "landing_stations_in_region": ["Al Khobar (Saudi Arabia)", "Bahrain", "Qatar", "UAE"],
+        "operator": "Consortium",
+        "status": "Active — Gulf Extension runs through Strait of Hormuz"
+      },
+      {
+        "name": "AAE-1 (Asia-Africa-Europe 1)",
+        "route": "Hong Kong to France via SE Asia, India, Gulf, Egypt",
+        "length_km": 25000,
+        "landing_stations_in_region": ["Fujairah (UAE)", "Qatar", "Oman"],
+        "operator": "Consortium",
+        "status": "Active"
+      },
+      {
+        "name": "IMEWE (India–Middle East–Western Europe)",
+        "route": "India to France via Gulf, Egypt",
+        "length_km": 12091,
+        "landing_stations_in_region": ["Fujairah (UAE)", "Jeddah (Saudi Arabia)"],
+        "operator": "Consortium",
+        "status": "Active"
+      },
+      {
+        "name": "EIG (Europe India Gateway)",
+        "route": "UK to India via Mediterranean, Egypt, Gulf",
+        "length_km": 15000,
+        "landing_stations_in_region": ["Fujairah (UAE)", "Oman"],
+        "operator": "Consortium",
+        "status": "Active"
+      },
+      {
+        "name": "TGN-Gulf (Tata TGN Gulf Cable)",
+        "route": "India to Gulf states",
+        "length_km": 2200,
+        "landing_stations_in_region": ["Fujairah (UAE)", "Bahrain", "Qatar", "Oman"],
+        "operator": "Tata Communications",
+        "status": "Active"
+      },
+      {
+        "name": "FALCON (FLAG Alcatel-Lucent Optical Network)",
+        "route": "India to Gulf states and Egypt",
+        "length_km": 11200,
+        "landing_stations_in_region": ["Fujairah (UAE)", "Oman", "Kuwait", "Bahrain", "Qatar", "Iraq"],
+        "operator": "GCX (formerly FLAG Telecom)",
+        "status": "Active"
+      },
+      {
+        "name": "Gulf Bridge International (GBI)",
+        "route": "Gulf states interconnect",
+        "length_km": 8600,
+        "landing_stations_in_region": ["Fujairah (UAE)", "Oman", "Saudi Arabia", "Bahrain", "Kuwait", "Qatar", "Iraq", "Iran"],
+        "operator": "GBI",
+        "status": "Active — only major cable with Iranian landing station"
+      },
+      {
+        "name": "2Africa",
+        "route": "Circumnavigates Africa, connects Europe, Middle East, Asia",
+        "length_km": 45000,
+        "landing_stations_in_region": ["Oman", "Saudi Arabia", "UAE"],
+        "operator": "Meta-led consortium",
+        "status": "Active"
+      }
+    ],
+    "key_landing_stations": {
+      "fujairah_uae": {
+        "description": "Primary Gulf cable landing hub, located on Gulf of Oman coast (outside Strait of Hormuz)",
+        "cables_landing": ["FLAG", "SEA-ME-WE 3", "SEA-ME-WE 4", "AAE-1", "IMEWE", "EIG", "TGN-Gulf", "FALCON", "GBI"],
+        "strategic_note": "Most UAE cables land at Fujairah specifically to avoid routing through the Strait of Hormuz — but cables serving Kuwait, Bahrain, Qatar, and Iraq must transit the Strait"
+      },
+      "muscat_oman": {
+        "description": "Secondary regional hub",
+        "cables_landing": ["SEA-ME-WE 5", "AAE-1", "EIG", "2Africa", "GBI"]
+      },
+      "iran_landing_stations": {
+        "description": "Iran has limited submarine cable connections",
+        "cables": ["GBI (Gulf Bridge International)"],
+        "notes": "Iran's limited cable connectivity means it relies heavily on terrestrial links through Turkey and Turkmenistan"
+      }
+    },
+    "vulnerability_assessment": {
+      "cable_depth_in_strait_m": "50-100 in shallow sections, up to 200+ in deeper areas",
+      "iranian_threats": [
+        "Naval mines — Iran has estimated 5,000-6,000 mines of various types",
+        "Ghadir-class midget submarines — can operate in shallow waters near cables",
+        "IRGC naval special forces — capable of diver-placed charges",
+        "Anchoring/dragging — deliberate anchor damage in known cable routes"
+      ],
+      "repair_time_estimate": "2-8 weeks per cable depending on damage location and availability of cable repair ships",
+      "economic_impact_if_severed": {
+        "estimated_daily_cost_usd": "Hundreds of millions to billions — difficult to quantify precisely",
+        "affected_services": "Cloud computing, financial transactions, streaming, enterprise communications",
+        "most_affected_countries": ["India", "UAE", "Saudi Arabia", "Qatar", "Bahrain", "Kuwait", "Pakistan"],
+        "notes": "India alone routes significant Europe-bound traffic through Gulf cables. GCC data center industry ($5B+) depends on cable connectivity."
+      },
+      "source": "TeleGeography; Rest of World; Capacity Media"
+    }
+  },
+
+  "gcc_water_vulnerability": {
+    "overview": {
+      "description": "GCC countries are among the most water-scarce nations on Earth. Most depend on energy-intensive desalination for the majority of their drinking water. Destruction of desalination plants would create a humanitarian catastrophe within days.",
+      "gcc_share_of_global_desalination_pct": 60,
+      "total_gcc_desalination_plants": 400,
+      "source": "World Bank; GRC; Al Jazeera"
+    },
+    "country_profiles": {
+      "qatar": {
+        "desalination_dependency_drinking_water_pct": 99,
+        "desalination_share_total_water_pct": 60,
+        "annual_water_consumption_billion_m3": 0.5,
+        "natural_freshwater_resources": "Virtually none — no permanent rivers or lakes",
+        "strategic_water_reserves_days": 2,
+        "major_desalination_plants": [
+          {
+            "name": "Ras Abu Fontas",
+            "location": "South of Doha",
+            "capacity_m3_per_day": 610000,
+            "technology": "MSF + RO"
+          },
+          {
+            "name": "Umm Al Houl",
+            "location": "South of Doha",
+            "capacity_m3_per_day": 590000,
+            "technology": "RO"
+          }
+        ],
+        "vulnerability_notes": "Qatar's consumption-to-natural-freshwater ratio is among the highest in the world — estimated at 2,000-17,000x depending on measurement. With only ~2 days of reserves, loss of desalination means a water crisis within 48 hours."
+      },
+      "kuwait": {
+        "desalination_dependency_drinking_water_pct": 90,
+        "desalination_share_total_water_pct": 47,
+        "groundwater_share_total_water_pct": 51,
+        "annual_water_consumption_billion_m3": 1.7,
+        "strategic_water_reserves_days": 2,
+        "major_desalination_plants": [
+          {
+            "name": "Az-Zour South",
+            "location": "Southern Kuwait",
+            "capacity_m3_per_day": 486000,
+            "technology": "RO"
+          },
+          {
+            "name": "Doha West",
+            "location": "Kuwait City area",
+            "capacity_m3_per_day": 300000,
+            "technology": "MSF"
+          },
+          {
+            "name": "Az-Zour North (IWPP)",
+            "location": "Southern Kuwait",
+            "capacity_m3_per_day": 486000,
+            "technology": "RO + MSF"
+          }
+        ],
+        "vulnerability_notes": "Kuwait's groundwater is largely non-potable brackish water. Drinking water depends almost entirely on desalination."
+      },
+      "uae": {
+        "desalination_dependency_drinking_water_pct": 42,
+        "desalination_share_total_water_pct": 41,
+        "groundwater_share_total_water_pct": 46,
+        "annual_water_consumption_billion_m3": 4.5,
+        "strategic_water_reserves_days": 45,
+        "water_security_strategy": "UAE 2036 Water Security Strategy — target of 45 days strategic reserves",
+        "major_desalination_plants": [
+          {
+            "name": "Jebel Ali",
+            "location": "Dubai",
+            "capacity_m3_per_day": 2228000,
+            "technology": "MSF + RO",
+            "notes": "One of the world's largest desalination plants"
+          },
+          {
+            "name": "Taweelah",
+            "location": "Abu Dhabi",
+            "capacity_m3_per_day": 909000,
+            "technology": "RO",
+            "notes": "World's largest RO desalination plant when commissioned"
+          },
+          {
+            "name": "Shuweihat",
+            "location": "Abu Dhabi, Western Region",
+            "capacity_m3_per_day": 454000,
+            "technology": "MSF"
+          }
+        ],
+        "vulnerability_notes": "UAE is better prepared than most GCC states with 45-day strategic reserves. However, groundwater is being depleted and is largely non-renewable fossil water."
+      },
+      "saudi_arabia": {
+        "desalination_dependency_drinking_water_pct": 60,
+        "desalination_share_total_water_pct": 22,
+        "groundwater_share_total_water_pct": 72,
+        "annual_water_consumption_billion_m3": 24.8,
+        "strategic_water_reserves_days": 30,
+        "major_desalination_plants": [
+          {
+            "name": "Ras Al-Khair",
+            "location": "Jubail, Eastern Province",
+            "capacity_m3_per_day": 1025000,
+            "technology": "MSF + RO",
+            "notes": "One of the world's largest desalination plants. Also generates 2,400 MW electricity."
+          },
+          {
+            "name": "Jubail Water and Power Plant (JWAP)",
+            "location": "Jubail, Eastern Province",
+            "capacity_m3_per_day": 800000,
+            "technology": "MSF + RO"
+          },
+          {
+            "name": "Shoaiba",
+            "location": "Red Sea coast, near Jeddah",
+            "capacity_m3_per_day": 880000,
+            "technology": "MSF"
+          },
+          {
+            "name": "Rabigh 3",
+            "location": "Red Sea coast",
+            "capacity_m3_per_day": 600000,
+            "technology": "RO"
+          }
+        ],
+        "vulnerability_notes": "Saudi Arabia has most desalination capacity of any country. Eastern Province plants (Ras Al-Khair, Jubail) face the Persian Gulf and are within range of Iranian missiles. Red Sea coast plants provide geographic diversification."
+      },
+      "bahrain": {
+        "desalination_dependency_drinking_water_pct": 97,
+        "desalination_share_total_water_pct": 59,
+        "annual_water_consumption_billion_m3": 0.5,
+        "strategic_water_reserves_days": 2,
+        "major_desalination_plants": [
+          {
+            "name": "Al Hidd",
+            "location": "Muharraq",
+            "capacity_m3_per_day": 273000,
+            "technology": "RO"
+          },
+          {
+            "name": "Al Dur",
+            "location": "Southern Bahrain",
+            "capacity_m3_per_day": 218000,
+            "technology": "RO"
+          }
+        ],
+        "vulnerability_notes": "Bahrain is the most geographically exposed GCC state — only 200 km from Iranian coast across the Persian Gulf. No strategic depth."
+      },
+      "oman": {
+        "desalination_dependency_drinking_water_pct": 75,
+        "desalination_share_total_water_pct": 36,
+        "annual_water_consumption_billion_m3": 1.8,
+        "strategic_water_reserves_days": 7,
+        "major_desalination_plants": [
+          {
+            "name": "Barka",
+            "location": "Al Batinah coast",
+            "capacity_m3_per_day": 281000,
+            "technology": "RO"
+          },
+          {
+            "name": "Sohar",
+            "location": "Al Batinah coast",
+            "capacity_m3_per_day": 250000,
+            "technology": "RO"
+          }
+        ],
+        "vulnerability_notes": "Oman has more groundwater than other GCC states but aquifers are being depleted. Omani facilities face the Gulf of Oman, not the Persian Gulf — slightly less exposed to Iranian missiles."
+      }
+    },
+    "desalination_cost_context": {
+      "total_gcc_desalination_infrastructure_value_usd": "Over $100 billion invested to date",
+      "cost_per_m3_desalinated_water_usd": "0.50-1.50 depending on technology",
+      "energy_cost": "Desalination consumes 15-20% of GCC electricity generation",
+      "notes": "Desalination plants are large, fixed, coastal targets — impossible to hide or harden significantly. Replacement takes 3-5 years to build."
+    },
+    "the_17000x_statistic": {
+      "description": "Some GCC microstates consume water at a rate 2,000 to 17,000 times their natural renewable freshwater resources. This is most applicable to Qatar and the UAE, which have negligible natural freshwater. The exact multiplier depends on measurement methodology but illustrates extreme dependence on desalination.",
+      "most_applicable_to": "Qatar",
+      "source": "World Resources Institute; various academic analyses"
+    }
+  },
+
+  "gcc_food_import_dependency": {
+    "overview": {
+      "average_gcc_food_import_pct": 85,
+      "cereal_import_pct": 93,
+      "rice_import_pct": 100,
+      "meat_import_pct": 62,
+      "vegetable_import_pct": 56,
+      "key_import_chokepoints": ["Strait of Hormuz", "Suez Canal", "Bab el-Mandeb"],
+      "food_through_hormuz_pct": 70,
+      "source": "WEF; RAND; ADHRB"
+    },
+    "country_profiles": {
+      "saudi_arabia": {
+        "food_import_pct": 86,
+        "strategic_food_reserves_months": 6,
+        "key_imports": ["Wheat", "Rice", "Barley", "Poultry", "Beef"],
+        "major_suppliers": ["Brazil", "India", "Australia", "USA", "Argentina", "EU"],
+        "domestic_production": "Growing wheat production (~500,000 tonnes), poultry sector expanding, dairy self-sufficient",
+        "notes": "SAGO (Saudi Grains Organization) maintains strategic grain reserves. Saudi has most food security capacity in GCC."
+      },
+      "uae": {
+        "food_import_pct": 90,
+        "strategic_food_reserves_months": 4,
+        "key_imports": ["Rice", "Wheat", "Fruits", "Meat", "Dairy"],
+        "major_suppliers": ["India", "Brazil", "USA", "Australia", "Pakistan", "Netherlands"],
+        "domestic_production": "Dates, some vegetables via hydroponics, limited poultry",
+        "notes": "UAE has invested heavily in food tech, vertical farming, and overseas farmland acquisitions (esp. in Africa, Central Asia)"
+      },
+      "kuwait": {
+        "food_import_pct": 92,
+        "strategic_food_reserves_months": 3,
+        "key_imports": ["Rice", "Wheat", "Meat", "Dairy", "Vegetables"],
+        "major_suppliers": ["India", "Brazil", "Australia", "USA", "EU"],
+        "domestic_production": "Minimal — some fishing, small-scale agriculture",
+        "notes": "Extremely dependent on Hormuz for food imports. Most exposed GCC state to food disruption."
+      },
+      "qatar": {
+        "food_import_pct": 90,
+        "strategic_food_reserves_months": 3,
+        "key_imports": ["Rice", "Wheat", "Meat", "Dairy", "Fruits"],
+        "major_suppliers": ["India", "Brazil", "Turkey", "Australia", "EU"],
+        "domestic_production": "Expanded domestic dairy (Baladna) after 2017 blockade. Some greenhouse vegetables.",
+        "notes": "2017 GCC blockade was a wake-up call — Qatar invested in domestic food production and Turkish/Omani supply alternatives. Still overwhelmingly import-dependent."
+      },
+      "bahrain": {
+        "food_import_pct": 95,
+        "strategic_food_reserves_months": 2,
+        "key_imports": ["Rice", "Wheat", "Meat", "Dairy", "All staples"],
+        "major_suppliers": ["Saudi Arabia", "India", "Brazil", "Australia"],
+        "domestic_production": "Negligible — some fishing and dates",
+        "notes": "Most food-insecure GCC state. Relies on King Fahd Causeway to Saudi Arabia as alternative to maritime imports."
+      },
+      "oman": {
+        "food_import_pct": 80,
+        "strategic_food_reserves_months": 3,
+        "key_imports": ["Rice", "Wheat", "Sugar", "Meat"],
+        "major_suppliers": ["India", "Brazil", "Australia", "Pakistan"],
+        "domestic_production": "More agriculture than other GCC states — dates, limes, vegetables, fishing industry",
+        "notes": "Oman has ports on Gulf of Oman and Arabian Sea, providing alternative import routes that bypass Hormuz"
+      }
+    }
+  },
+
+  "suez_bab_el_mandeb_threat": {
+    "suez_canal": {
+      "annual_trade_value_usd_trillion": 1.0,
+      "daily_trade_value_usd_billion": 2.74,
+      "annual_revenue_to_egypt_usd_billion": 9.4,
+      "normal_daily_transits": 80,
+      "daily_transits_during_houthi_crisis": 29,
+      "share_of_global_trade_pct": 12,
+      "share_of_global_oil_trade_pct": 9,
+      "share_of_global_lng_trade_pct": 8,
+      "source": "Suez Canal Authority; Reuters; Atlas Institute"
+    },
+    "bab_el_mandeb": {
+      "description": "26 km wide strait connecting Red Sea to Gulf of Aden — southern chokepoint controlling Suez Canal access",
+      "width_km": 26,
+      "daily_oil_flow_million_bpd": 6.2,
+      "daily_vessel_transits": 70
+    },
+    "houthi_capabilities": {
+      "anti_ship_ballistic_missiles": ["Asef", "Tankil"],
+      "anti_ship_cruise_missiles": ["Multiple Iranian-derived types"],
+      "drones": ["Samad-series UAVs", "Waid kamikaze drones"],
+      "naval_mines": "Capability demonstrated — have deployed mines in Red Sea",
+      "boats": "Explosive-laden unmanned surface vessels (USVs)",
+      "demonstrated_effectiveness": {
+        "ships_attacked_2023_2025": "Over 100 commercial vessels attacked or harassed",
+        "ships_sunk_or_severely_damaged": 4,
+        "trade_diversion_pct": "65% of container traffic rerouted away from Red Sea at peak",
+        "insurance_premium_increase": "10-50x increase in war risk premiums for Red Sea transit"
+      },
+      "source": "Wikipedia Red Sea crisis; Al Jazeera; Maplecroft"
+    },
+    "hezbollah_naval_capabilities": {
+      "anti_ship_missiles": ["C-802 (Iranian Noor)", "Yakhont (P-800)"],
+      "demonstrated": "2006 — hit INS Hanit (Israeli corvette) with C-802 missile",
+      "naval_mines": "Limited capability",
+      "threat_area": "Eastern Mediterranean, primarily approaches to Israeli ports"
+    },
+    "alternative_routes": {
+      "cape_of_good_hope": {
+        "additional_distance_nautical_miles": 3000,
+        "additional_days": 10,
+        "additional_fuel_cost_per_vessel_usd": 1000000,
+        "notes": "Rerouting around Africa adds ~10 days and ~$1M fuel per voyage for large container ships"
+      },
+      "northern_sea_route": {
+        "availability": "Seasonal (summer months only), limited capacity",
+        "notes": "Not a viable mass alternative"
+      },
+      "east_west_pipeline_alternatives": {
+        "petroline_saudi": "East-West crude oil pipeline — 5M bpd capacity, bypasses Hormuz to Red Sea terminal at Yanbu",
+        "habshan_fujairah_uae": "Abu Dhabi crude oil pipeline — 1.5M bpd, bypasses Hormuz to Fujairah on Gulf of Oman",
+        "notes": "These pipelines can partially offset Hormuz closure for oil but not for LNG, containers, or food"
+      }
+    },
+    "insurance_impact": {
+      "normal_war_risk_premium_pct": 0.01,
+      "crisis_war_risk_premium_pct": 0.5,
+      "peak_premium_during_houthi_attacks_pct": 1.0,
+      "notes": "War risk premiums for Hormuz transit have reached 1%+ of hull value during active hostilities — for a $150M vessel, that's $1.5M per transit"
+    }
+  },
+
+  "energy_infrastructure_targets": {
+    "strait_of_hormuz_oil_flow": {
+      "total_flow_million_bpd": 20.9,
+      "crude_oil_million_bpd": 15.0,
+      "condensate_and_products_million_bpd": 5.5,
+      "share_of_global_petroleum_consumption_pct": 20,
+      "share_of_global_seaborne_oil_trade_pct": 27,
+      "share_of_global_crude_trade_pct": 34,
+      "primary_destination": "Asia (90% of Hormuz exports, with China and India receiving 44%)",
+      "source": "EIA; IEA"
+    },
+    "saudi_aramco": {
+      "total_capacity_million_bpd": 12.0,
+      "share_of_global_oil_production_pct": 12,
+      "key_facilities": [
+        {
+          "name": "Abqaiq",
+          "type": "Processing/stabilization",
+          "capacity_bpd": 7000000,
+          "location": "Eastern Province",
+          "significance": "World's largest oil processing facility. Processes majority of Saudi crude before export.",
+          "precedent": "September 2019 drone/missile attack temporarily knocked out 5.7M bpd — over 5% of global supply",
+          "vulnerability": "Demonstrated vulnerability to drone and cruise missile attack"
+        },
+        {
+          "name": "Ras Tanura",
+          "type": "Refinery + export terminal",
+          "refinery_capacity_bpd": 550000,
+          "location": "Persian Gulf coast, Eastern Province",
+          "significance": "Saudi Arabia's largest offshore crude loading terminal + major refinery. Critical for meeting export commitments.",
+          "notes": "Loading capacity handles millions of bpd of crude exports"
+        },
+        {
+          "name": "Khurais",
+          "type": "Oil field + processing",
+          "capacity_bpd": 1500000,
+          "location": "Central Saudi Arabia",
+          "significance": "Saudi Arabia's second-largest oil field"
+        },
+        {
+          "name": "Ghawar",
+          "type": "Oil field",
+          "capacity_bpd": 3800000,
+          "location": "Eastern Province",
+          "significance": "World's largest conventional oil field. Multiple processing facilities across 280 km."
+        },
+        {
+          "name": "Yanbu",
+          "type": "Refinery + export terminal",
+          "refinery_capacity_bpd": 400000,
+          "location": "Red Sea coast",
+          "significance": "Alternative export route bypassing Hormuz. Connected to East-West pipeline."
+        }
+      ]
+    },
+    "qatar_energy": {
+      "key_facilities": [
+        {
+          "name": "North Field / Ras Laffan",
+          "type": "LNG production complex",
+          "lng_capacity_mtpa": 77,
+          "share_of_global_lng_trade_pct": 25,
+          "refinery_capacity_bpd": 306600,
+          "location": "Northeast Qatar, Persian Gulf coast",
+          "significance": "Single largest LNG production site in the world. Approximately one-quarter of all global LNG trade comes from this one location.",
+          "expansion_plan": "North Field Expansion (NFE) to increase to 126 mtpa by 2027",
+          "vulnerability": "Concentrated single point of failure. Within range of Iranian ballistic missiles (~250 km across Gulf). No geographic diversification."
+        }
+      ],
+      "north_field_gas_reserves": {
+        "description": "World's largest non-associated natural gas field, shared with Iran's South Pars",
+        "estimated_reserves_tcf": 900,
+        "notes": "Iran and Qatar share this massive gas field — complicates targeting decisions"
+      }
+    },
+    "uae_adnoc": {
+      "total_production_capacity_bpd": 4500000,
+      "key_facilities": [
+        {
+          "name": "Ruwais",
+          "type": "Refinery + petrochemical complex",
+          "refinery_capacity_bpd": 922000,
+          "location": "Abu Dhabi, Western Region",
+          "significance": "One of the world's largest integrated refining and petrochemical complexes"
+        },
+        {
+          "name": "Das Island",
+          "type": "Offshore oil/LNG processing + export terminal",
+          "lng_capacity_mtpa": 6,
+          "location": "Offshore Abu Dhabi, Persian Gulf",
+          "significance": "Processes and exports crude oil, LNG, LPG, naphtha, and sulfur. Plans to increase LNG capacity by 0.9 mtpa."
+        },
+        {
+          "name": "Habshan-Fujairah Pipeline",
+          "type": "Strategic bypass pipeline",
+          "capacity_bpd": 1500000,
+          "route": "Abu Dhabi to Fujairah (Gulf of Oman)",
+          "significance": "Allows UAE to export crude bypassing Strait of Hormuz. Critical strategic asset."
+        }
+      ]
+    },
+    "kuwait_knpc": {
+      "total_refining_capacity_bpd": 800000,
+      "total_oil_production_bpd": 2700000,
+      "key_facilities": [
+        {
+          "name": "Mina Al-Ahmadi",
+          "type": "Refinery + export terminal",
+          "capacity_bpd": 346000,
+          "location": "Persian Gulf coast, southern Kuwait",
+          "significance": "Kuwait's oldest and most strategic refinery. Includes offshore loading terminals."
+        },
+        {
+          "name": "Mina Abdullah",
+          "type": "Refinery",
+          "capacity_bpd": 454000,
+          "location": "Persian Gulf coast, southern Kuwait",
+          "significance": "Kuwait's largest refinery by capacity"
+        }
+      ],
+      "vulnerability_notes": "Kuwait's refineries are concentrated on the Persian Gulf coast, ~250 km from Iranian coast. No bypass pipeline exists — all exports must transit Hormuz."
+    },
+    "iran_facilities": {
+      "total_oil_production_bpd": 3200000,
+      "key_facilities": [
+        {
+          "name": "Kharg Island",
+          "type": "Oil export terminal + storage",
+          "export_share_of_iran_oil_pct": 96,
+          "storage_capacity_barrels": 30000000,
+          "loading_capacity_bpd": 7000000,
+          "location": "Persian Gulf, 25 km offshore",
+          "significance": "Iran's primary oil export terminal — handles ~96% of Iran's oil exports. Destruction would eliminate Iran's oil export capability.",
+          "vulnerability": "Island facility — exposed to air and naval attack. Was attacked repeatedly during Iran-Iraq War (1984-1988)."
+        },
+        {
+          "name": "Asaluyeh / South Pars",
+          "type": "Gas processing + condensate export",
+          "location": "Bushehr Province, Persian Gulf coast",
+          "significance": "Iran's primary gas processing hub for the South Pars field (shared with Qatar's North Field). Processes ~600 mcm/day of natural gas.",
+          "products": ["Natural gas", "Condensate", "LPG", "Sulfur", "Petrochemicals"]
+        },
+        {
+          "name": "Bandar Abbas Refinery",
+          "type": "Refinery",
+          "capacity_bpd": 320000,
+          "location": "Strait of Hormuz coast",
+          "significance": "Iran's largest refinery by capacity. Located directly on the Strait."
+        },
+        {
+          "name": "Isfahan Refinery",
+          "type": "Refinery",
+          "capacity_bpd": 375000,
+          "location": "Central Iran",
+          "significance": "Iran's highest-capacity refinery. Interior location provides some protection."
+        },
+        {
+          "name": "Abadan Refinery",
+          "type": "Refinery",
+          "capacity_bpd": 400000,
+          "location": "Khuzestan Province, near Iraq border",
+          "significance": "Historically one of the world's largest refineries. Heavily damaged in Iran-Iraq War, since rebuilt."
+        }
+      ]
+    }
+  },
+
+  "war_termination_scenarios": {
+    "description": "Realistic conditions under which each major actor would seek to end hostilities, based on historical precedent and structural constraints",
+
+    "united_states": {
+      "political_termination": {
+        "domestic_pressure_triggers": [
+          "US military casualties exceeding 500 KIA — public tolerance threshold based on post-9/11 wars",
+          "Oil prices sustained above $150/bbl causing recession and voter backlash",
+          "Congressional opposition / War Powers Act challenges gaining momentum",
+          "2026 midterm elections (November) — if war becomes unpopular, electoral pressure mounts",
+          "Allied GCC civilian casualties from Iranian retaliation creating diplomatic strain"
+        ],
+        "coalition_collapse_risk": "Low — Israel is fully committed. GCC states may privately seek de-escalation but won't publicly break with US.",
+        "media_fatigue_timeline_weeks": 8
+      },
+      "economic_termination": {
+        "oil_price_threshold_usd": 150,
+        "stock_market_decline_threshold_pct": 20,
+        "gdp_impact_quarterly_threshold_pct": -2.0,
+        "insurance_market_stress": "Lloyd's war risk pool exhaustion",
+        "notes": "Trump administration particularly sensitive to stock market and gas prices. A recession would be politically devastating."
+      },
+      "military_termination": {
+        "precision_munition_exhaustion_timeline_weeks": 6,
+        "carrier_vulnerability_threshold": "Loss of a major surface combatant (destroyer or above) would be politically shattering",
+        "escalation_red_lines": [
+          "Nuclear weapon use by any party",
+          "Direct attack on US homeland",
+          "Chinese or Russian military intervention",
+          "Major humanitarian catastrophe attributed to US strikes"
+        ]
+      },
+      "face_saving_off_ramps": [
+        "Declare nuclear sites 'destroyed' and pivot to diplomatic phase — 'mission accomplished' framing",
+        "Announce bilateral negotiations with Iran on 'comprehensive deal'",
+        "UN Security Council resolution as face-saving framework",
+        "Point to regime behavior change / concessions as victory",
+        "Ceasefire tied to IAEA inspections regime"
+      ]
+    },
+
+    "israel": {
+      "political_termination": {
+        "domestic_pressure_triggers": [
+          "Hezbollah rocket campaign making northern Israel uninhabitable for extended period",
+          "Israeli civilian casualties exceeding 1,000",
+          "Reservist fatigue — Israel's economy depends on reservists returning to civilian jobs",
+          "US withdrawing support or pressuring ceasefire"
+        ],
+        "coalition_stability": "Netanyahu government depends on war for political survival — war termination creates domestic political risk for leadership"
+      },
+      "economic_termination": {
+        "gdp_impact_threshold_pct": -5.0,
+        "reservist_economic_cost_per_month_usd_billion": 2.5,
+        "credit_downgrade_risk": "Extended war leads to further sovereign rating downgrades",
+        "notes": "Israel's economy contracted significantly during 2023-2024 Gaza operations. Extended multi-front war is unsustainable beyond months."
+      },
+      "military_termination": {
+        "iron_dome_interceptor_depletion": "Iron Dome / David's Sling interceptor stocks are finite — production cannot match sustained high-volume attacks",
+        "air_force_attrition": "Any loss of F-35s is strategically significant given small fleet size",
+        "multi_front_strain": "Simultaneous Gaza, Lebanon, and Iran operations stretch IDF beyond capacity for sustained operations"
+      },
+      "face_saving_off_ramps": [
+        "Declare Iran nuclear program 'set back 10+ years'",
+        "Negotiate Hezbollah withdrawal from southern Lebanon as strategic gain",
+        "International security guarantees for Israel as part of diplomatic framework",
+        "Demilitarized zones and monitoring regimes as tangible outcomes"
+      ]
+    },
+
+    "iran": {
+      "political_termination": {
+        "domestic_pressure_triggers": [
+          "Regime survival threat — if war threatens IRGC/clerical hold on power",
+          "Popular uprising risk — economic devastation could trigger domestic unrest (2019/2022 protest precedent)",
+          "Ethnic separatism risk — war stress could activate Kurdish, Baloch, Arab separatist movements",
+          "Supreme Leader succession crisis (post-Khamenei assassination in scenario)"
+        ],
+        "regime_calculus": "Regime survival is the supreme objective — Iran will accept significant military losses before accepting terms that threaten regime continuity"
+      },
+      "economic_termination": {
+        "oil_export_elimination_timeline_weeks": 2,
+        "foreign_reserves_exhaustion_months": 6,
+        "hyperinflation_threshold": "Already under severe sanctions — wartime economy can sustain for months on autarky model",
+        "notes": "Iran has experience operating under maximum pressure sanctions since 2018. Economic pain tolerance is high but not infinite."
+      },
+      "military_termination": {
+        "ballistic_missile_stock_depletion_weeks": 4,
+        "air_defense_degradation_threshold_pct": 70,
+        "proxy_force_decapitation": "Loss of Hezbollah leadership + supply lines significantly reduces Iran's regional leverage",
+        "notes": "Iran cannot win a conventional war against US/Israel. Strategy is to inflict enough pain to force negotiated outcome."
+      },
+      "face_saving_off_ramps": [
+        "Sanctions relief package presented as diplomatic victory",
+        "Framing survival itself as victory — 'resistance won' narrative (Hezbollah 2006 model)",
+        "Nuclear deal with enhanced status (recognized as threshold state)",
+        "Reconstruction aid and diplomatic recognition package",
+        "Regional security framework that gives Iran a formal seat at the table"
+      ]
+    },
+
+    "gcc_states": {
+      "political_termination": {
+        "domestic_pressure_triggers": [
+          "Civilian casualties from Iranian missile/drone attacks",
+          "Water crisis if desalination plants hit — 48 hours to catastrophe",
+          "Economic devastation from Hormuz closure — oil can't export, food can't import",
+          "Expatriate exodus — GCC economies depend on foreign workers who would flee",
+          "Popular unrest risk (especially Bahrain's Shia majority population)"
+        ],
+        "coalition_dynamics": "GCC states are reluctant participants — none want to be on the front line. Would push hard for US to negotiate ceasefire."
+      },
+      "economic_termination": {
+        "oil_revenue_loss_per_day_usd_million": {
+          "saudi_arabia": 800,
+          "uae": 300,
+          "kuwait": 200,
+          "qatar": 150,
+          "notes": "Combined GCC oil/gas revenue loss exceeds $1.4B/day during Hormuz closure"
+        },
+        "sovereign_wealth_fund_drawdown_tolerance_months": 12,
+        "gdp_contraction_threshold_pct": -10,
+        "notes": "GCC sovereign wealth funds provide enormous financial buffer, but cannot substitute for water and food security. Economic pain is secondary to physical survival."
+      },
+      "military_termination": {
+        "gcc_military_role": "Primarily defensive — providing basing, air defense, logistical support to US forces",
+        "patriot_thaad_interceptor_stocks": "Finite — US resupply is critical",
+        "notes": "GCC states are not primary combatants but bear disproportionate risk from Iranian retaliation"
+      },
+      "face_saving_off_ramps": [
+        "Regional security framework including Iran — reduces future threat",
+        "Quiet bilateral engagement with Iran — most GCC states have back-channel relationships",
+        "Present post-war reconstruction as regional leadership opportunity",
+        "Energy market stabilization and price recovery as economic justification"
+      ]
+    }
+  }
+}

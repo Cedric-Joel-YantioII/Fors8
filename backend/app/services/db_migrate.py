@@ -137,6 +137,23 @@ def _try_create_database(database_url: str) -> None:
         logger.debug("Could not auto-create database '%s': %s", db_name, exc)
 
 
+def _add_column_if_missing(cur, table: str, column: str, col_type: str) -> None:
+    """Add a column to an existing table if it doesn't already exist."""
+    try:
+        cur.execute(
+            "SELECT 1 FROM information_schema.columns "
+            "WHERE table_name = %s AND column_name = %s",
+            (table, column),
+        )
+        if cur.fetchone() is None:
+            cur.execute(f'ALTER TABLE {table} ADD COLUMN {column} {col_type}')
+            logger.info("Added column %s.%s (%s)", table, column, col_type)
+        else:
+            logger.debug("Column %s.%s already exists", table, column)
+    except Exception as exc:
+        logger.warning("Failed to add column %s.%s: %s", table, column, exc)
+
+
 def ensure_schema(database_url: str = None) -> None:
     """Create all tables and indexes if they don't exist.
 
@@ -166,6 +183,9 @@ def ensure_schema(database_url: str = None) -> None:
 
         cur.execute(_TABLES_SQL)
         cur.execute(_INDEXES_SQL)
+
+        # Incremental migrations: add columns that may not exist yet
+        _add_column_if_missing(cur, 'predictions', 'graph_id', 'TEXT')
 
         cur.close()
         conn.close()

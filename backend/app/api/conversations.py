@@ -74,10 +74,14 @@ def create_conversation():
         title = (data.get('title') or '').strip() or "New Conversation"
 
         conversation = db.create_conversation(title=title)
+        if not conversation:
+            return jsonify({"error": "Failed to create conversation"}), 500
 
         return jsonify({
-            "conversation_id": conversation["id"],
+            "id": conversation["id"],
             "title": conversation["title"],
+            "created_at": conversation.get("created_at"),
+            "updated_at": conversation.get("updated_at"),
         }), 201
 
     except Exception as e:
@@ -203,6 +207,9 @@ def add_message(conversation_id: str):
             content=content,
         )
 
+        if not message:
+            return jsonify({"error": "Failed to save message"}), 500
+
         prediction_id = None
 
         # If user message, trigger a prediction with full conversation context
@@ -246,7 +253,7 @@ def add_message(conversation_id: str):
                     question=question_with_context,
                     model_name=model_name,
                     vllm_endpoint=vllm_endpoint,
-                    num_runs=3,
+                    num_runs=10,
                     num_agents=17,
                 )
                 prediction_id = job.prediction_id

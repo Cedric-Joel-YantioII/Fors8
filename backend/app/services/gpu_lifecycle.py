@@ -351,7 +351,7 @@ class GPULifecycleManager:
                 progress_callback,
                 f"Pulling {model} ({model_config['size_gb']}GB) via Ollama...",
             )
-            self._pull_model(endpoint, model, timeout=600, progress_callback=progress_callback)
+            self._pull_model(endpoint, model, timeout=1200, progress_callback=progress_callback)
 
             # Step 5: Verify model is responding
             self._cb(progress_callback, "Verifying model is ready...")
@@ -409,7 +409,7 @@ class GPULifecycleManager:
 
         search_body = {
             "limit": 20,
-            "type": "bid",  # spot/interruptible = cheapest
+            "type": "on-demand",  # on-demand for reliability (spot hosts often phantom)
             "verified": {"eq": True},
             "rentable": {"eq": True},
             "num_gpus": {"gte": min_gpus},
@@ -507,16 +507,25 @@ class GPULifecycleManager:
 
         while time.time() < deadline:
             try:
+                # Use the list endpoint — the single-instance endpoint
+                # returns blank data for newly created instances on Vast.ai
                 resp = requests.get(
-                    f"{VAST_API_BASE}/instances/{instance_id}/",
+                    f"{VAST_API_BASE}/instances/",
                     headers=headers,
+                    params={"owner": "me"},
                     timeout=10,
                 )
                 if resp.status_code != 200:
                     time.sleep(10)
                     continue
 
-                data = resp.json()
+                # Find our instance in the list
+                data = {}
+                for inst in resp.json().get("instances", []):
+                    if inst.get("id") == instance_id:
+                        data = inst
+                        break
+
                 status = data.get("actual_status", "")
                 public_ip = data.get("public_ipaddr", "")
                 ports = data.get("ports", {})

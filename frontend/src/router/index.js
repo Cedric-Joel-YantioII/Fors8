@@ -1,13 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Home from '../views/Home.vue'
-import Process from '../views/MainView.vue'
-import SimulationView from '../views/SimulationView.vue'
-import SimulationRunView from '../views/SimulationRunView.vue'
-import ReportView from '../views/ReportView.vue'
-import InteractionView from '../views/InteractionView.vue'
-import SettingsPage from '../components/SettingsPage.vue'
-import PredictView from '../views/PredictView.vue'
-import ChatView from '../views/ChatView.vue'
+import WorkspaceView from '../views/WorkspaceView.vue'
 
 const routes = [
   {
@@ -16,57 +9,63 @@ const routes = [
     component: Home
   },
   {
-    path: '/settings',
-    name: 'Settings',
-    component: SettingsPage
+    path: '/predict/:predictionId',
+    name: 'Predict',
+    component: WorkspaceView,
+    props: true
+  },
+  {
+    path: '/workspace',
+    name: 'Workspace',
+    component: WorkspaceView
+  },
+  // Project workflow routes — all handled by WorkspaceView
+  {
+    path: '/project/:projectId',
+    name: 'Project',
+    component: WorkspaceView,
+    props: route => ({ projectId: route.params.projectId, initialStep: 1 })
   },
   {
     path: '/process/:projectId',
     name: 'Process',
-    component: Process,
-    props: true
+    component: WorkspaceView,
+    props: route => ({ projectId: route.params.projectId, initialStep: 1 })
   },
   {
     path: '/simulation/:simulationId',
     name: 'Simulation',
-    component: SimulationView,
-    props: true
+    component: WorkspaceView,
+    props: route => ({ simulationId: route.params.simulationId, initialStep: 2 })
   },
   {
     path: '/simulation/:simulationId/start',
     name: 'SimulationRun',
-    component: SimulationRunView,
-    props: true
+    component: WorkspaceView,
+    props: route => ({
+      simulationId: route.params.simulationId,
+      initialStep: 3,
+      maxRounds: route.query.maxRounds ? parseInt(route.query.maxRounds) : null
+    })
   },
   {
     path: '/report/:reportId',
     name: 'Report',
-    component: ReportView,
-    props: true
+    component: WorkspaceView,
+    props: route => ({ reportId: route.params.reportId, initialStep: 4 })
   },
   {
     path: '/interaction/:reportId',
     name: 'Interaction',
-    component: InteractionView,
-    props: true
+    component: WorkspaceView,
+    props: route => ({ reportId: route.params.reportId, initialStep: 5 })
   },
-  {
-    path: '/predict/:predictionId',
-    name: 'Predict',
-    component: PredictView,
-    props: true
-  },
-  {
-    path: '/chat',
-    name: 'Chat',
-    component: ChatView
-  },
-  {
-    path: '/chat/:conversationId',
-    name: 'ChatConversation',
-    component: ChatView,
-    props: true
-  }
+  // Redirect old routes
+  { path: '/settings', redirect: '/workspace' },
+  { path: '/chat', redirect: '/workspace' },
+  { path: '/chat/:conversationId', redirect: '/workspace' },
+  // Catch-all
+  { path: '/:pathMatch(.*)*', redirect: '/' },
 ]
 
 const router = createRouter({

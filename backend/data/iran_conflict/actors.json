@@ -13,6 +13,12 @@
     "primary_objective": "Destroy Iran's nuclear program and force regime capitulation or deal",
     "secondary_objectives": ["Protect GCC energy infrastructure", "Maintain Strait of Hormuz freedom of navigation", "Degrade Hezbollah", "Demonstrate US military supremacy"],
     "constraints": ["Congressional war authorization questions", "Oil price impact on domestic economy", "Avoiding US military casualties", "Allied GCC states being hit by Iranian retaliation"],
+    "war_termination_conditions": {
+      "military_victory_definition": "Destruction of Iran nuclear program + regime capitulation or deal",
+      "acceptable_deal": "Iran agrees to dismantle nuclear program, disarm proxies, accept inspections",
+      "domestic_pressure_to_stop": "Oil above $150, US military casualties exceed 500, recession begins",
+      "face_saving_exit": "Declare 'mission accomplished' on nuclear facilities, negotiate from strength"
+    },
     "military_capability": {
       "branches": ["US CENTCOM", "US Navy (carrier groups)", "US Air Force", "Special Operations"],
       "key_systems": ["F-35, F-22, B-2 stealth bombers", "Tomahawk cruise missiles", "Patriot PAC-3", "THAAD"],
@@ -56,6 +62,12 @@
     "primary_objective": "Destroy Iran's nuclear program permanently",
     "secondary_objectives": ["Degrade Hezbollah's rocket arsenal", "Eliminate IRGC leadership", "Establish regional deterrence"],
     "constraints": ["Interceptor depletion crisis (Arrow, David's Sling, Iron Dome critically low)", "Two-front war (Iran + Lebanon)", "US political support dependency", "Civilian casualty narrative damage (Minab school)"],
+    "war_termination_conditions": {
+      "military_victory_definition": "Iran nuclear program destroyed permanently + Hezbollah degraded to non-threat",
+      "acceptable_deal": "International verification of nuclear dismantlement + buffer zone in Lebanon",
+      "existential_threshold": "Interceptor depletion forces acceptance of any deal that stops missile barrages",
+      "netanyahu_political_calculus": "Needs military victory for political survival — peace deal alone insufficient"
+    },
     "military_capability": {
       "branches": ["IDF Air Force", "IDF Ground Forces", "IDF Navy", "Mossad", "Unit 8200"],
       "key_systems": ["F-35I Adir", "Arrow 3", "David's Sling", "Iron Dome", "Jericho III ICBM"],
@@ -99,6 +111,13 @@
     "primary_objective": "Regime survival while extracting maximum cost from attackers",
     "secondary_objectives": ["Force US/Israel to accept Iran's 3 demands", "Maintain Axis of Resistance", "Preserve nuclear reconstitution capability", "Demonstrate resolve to domestic/regional audience"],
     "constraints": ["5,300+ military casualties and rising", "Infrastructure damage from 900+ strikes", "Civilian casualties creating internal pressure", "Sanctions limiting resupply", "Proxy network under simultaneous attack"],
+    "war_termination_conditions": {
+      "regime_survival_priority": "Will accept losses to military/nuclear program if regime survives",
+      "acceptable_deal": "Sanctions relief, recognition of regional role, nuclear 'right to enrich'",
+      "will_escalate_when": "Regime faces existential threat — nuclear capability becomes last resort",
+      "asymmetric_leverage": "Can bleed US/Israel economically through oil disruption and proxy attrition indefinitely",
+      "will_not_accept": "Regime change, complete nuclear dismantlement without reciprocal concessions"
+    },
     "military_capability": {
       "branches": ["IRGC", "IRGC Navy", "IRGC Aerospace Force", "Artesh (regular army)", "Basij paramilitary", "Quds Force"],
       "key_systems": ["Sejjil 'dancing missile' (MRBM, 2000km)", "Shahed drones", "Fateh-110 SRBM", "Anti-ship missiles"],
@@ -207,6 +226,12 @@
     "leadership_temperament": "Ideologically committed, experienced fighters, strong martyrdom culture",
     "red_lines": ["Threat to Lebanese Shia community", "Abandonment by Iran"],
     "primary_objective": "Inflict maximum cost on Israel, tie down IDF forces",
+    "war_termination_conditions": {
+      "will_stop_fighting_when": "Iran orders ceasefire or Lebanese Shia community faces annihilation",
+      "acceptable_deal": "Israeli withdrawal from Lebanon, prisoner exchange, reconstruction aid",
+      "will_not_accept": "Disarmament without political guarantees, surrender of southern Lebanon positions",
+      "leverage": "Rocket attrition draining Israeli interceptors — time favors Hezbollah if they survive"
+    },
     "belief_system": "Shia Islam, Wilayat al-Faqih, resistance ideology, martyrdom",
     "martyrdom_willingness": 0.85,
     "eschatological_factor": 0.5,
@@ -231,6 +256,12 @@
     "leadership_temperament": "More pragmatic than other Iranian proxies, calculating, preserving forces",
     "red_lines": ["Iran ordering full activation", "Strait of Hormuz falling to US control"],
     "primary_objective": "Maintain Red Sea threat as leverage for Iran's negotiating position",
+    "war_termination_conditions": {
+      "will_stop_fighting_when": "Iran orders stand-down or US offers Yemen ceasefire + sanctions relief",
+      "acceptable_deal": "End of Saudi-led blockade, recognition of Houthi governance in northern Yemen",
+      "leverage": "Red Sea shipping disruption costs global economy billions — disproportionate to military cost",
+      "escalation_trigger": "Iran activation order or US strikes on Houthi leadership"
+    },
     "belief_system": "Zaydi Shia Islam, anti-imperialism, resistance ideology",
     "martyrdom_willingness": 0.5,
     "eschatological_factor": 0.3,
@@ -267,6 +298,12 @@
     "description": "Iran-aligned militias in Iraq. Actively attacking US bases since Feb 28. Multiple factions with varying Iran loyalty.",
     "strategic_doctrine": "Harass US forces in Iraq, threaten US logistics and bases",
     "primary_objective": "Force US withdrawal from Iraq through attrition",
+    "war_termination_conditions": {
+      "will_stop_fighting_when": "Iran orders ceasefire or Iraqi government cracks down decisively",
+      "acceptable_deal": "US military withdrawal from Iraq, integration into Iraqi security forces",
+      "internal_split": "Some factions more loyal to Baghdad than Tehran — fragmentation risk under pressure",
+      "leverage": "Can threaten US logistics lines and forward operating bases across Iraq"
+    },
     "belief_system": "Shia Islam, Iraqi nationalism mixed with Iran loyalty",
     "martyrdom_willingness": 0.6,
     "risk_tolerance": 0.6,
@@ -305,9 +342,23 @@
     "actor_name": "Saudi Arabia",
     "actor_type": "NationState",
     "tier": "operational",
-    "description": "US bases on Saudi soil hit by Iranian missiles. Oil infrastructure vulnerable (Abqaiq 2019 precedent). Torn between US alliance and self-preservation. Kuwait/Saudi refineries already hit.",
+    "description": "US bases on Saudi soil hit by Iranian missiles. Oil infrastructure vulnerable (Abqaiq 2019 precedent). Torn between US alliance and self-preservation. Kuwait/Saudi refineries already hit. Aramco facilities struck. NEOM and Vision 2030 giga-projects at existential risk.",
     "strategic_doctrine": "Hedging between US alliance and Iran accommodation, protect oil infrastructure at all costs",
     "primary_objective": "Protect energy infrastructure and avoid becoming a primary target",
+    "existential_vulnerabilities": {
+      "water_security": "50% dependent on desalination — Jubail (largest desalination plant in world) and Ras Al-Khair at risk of Iranian missile strike",
+      "food_security": "Imports 80% of food — port/shipping disruption = famine risk within weeks",
+      "expat_dependency": "38% of population is expatriate — key sectors (construction, services) collapse if expats flee",
+      "tourism_revenue_pct": 5,
+      "oil_export_disruption_impact": "62% of GDP dependent on hydrocarbon exports — Abqaiq processing (already hit in 2019) handles 70% of output",
+      "desalination_plants_at_risk": ["Jubail", "Ras Al-Khair", "Shoaiba", "Yanbu"],
+      "giga_projects_at_risk": "NEOM ($500B), The Line, Red Sea Project — all require stability and foreign investment to continue"
+    },
+    "war_termination_conditions": {
+      "will_push_us_for_ceasefire_when": "Aramco facilities face sustained attack or desalination plants are targeted",
+      "red_line_for_neutrality_break": "Direct Iranian strike on Jubail desalination or Ras Tanura oil terminal",
+      "diplomatic_leverage": "Oil production decisions (swing producer), US base hosting (Prince Sultan, Al Udeid), sovereign wealth fund markets"
+    },
     "risk_tolerance": 0.2,
     "negotiation_willingness": 0.7,
     "alliance_network": ["United States", "UAE", "GCC"],
@@ -320,11 +371,27 @@
     "actor_name": "United Arab Emirates",
     "actor_type": "NationState",
     "tier": "operational",
-    "description": "US bases hit, gas facilities closed. F-35 operator. Economic hub at risk. Dual hedging between US and regional stability.",
+    "description": "US bases hit, gas facilities closed. F-35 operator. Economic hub at risk. Dual hedging between US and regional stability. Dubai tourism collapsing, Jebel Ali port insurance premiums skyrocketing. 90% expat population beginning to flee.",
     "strategic_doctrine": "Economic security first, military hedging, avoid becoming a primary battleground",
     "primary_objective": "Protect economic infrastructure and maintain stability",
+    "existential_vulnerabilities": {
+      "water_security": "90% dependent on desalination plants — uses 17x natural water supply. 3 days of reserves without desalination",
+      "food_security": "Imports 90% of food — Jebel Ali port disruption = immediate food crisis",
+      "expat_dependency": "90% of population is expatriate — mass exodus already beginning, collapses construction, finance, tourism, services",
+      "tourism_revenue_pct": 30,
+      "oil_export_disruption_impact": "30% of GDP from hydrocarbons, but diversified economy (tourism, logistics, finance) ALL depend on stability",
+      "desalination_plants_at_risk": ["Jebel Ali", "Umm Al Nar", "Fujairah", "Taweelah"],
+      "jebel_ali_port": "Handles 15 million containers/year — 9th largest port globally. Insurance premiums 10x, some shippers already rerouting",
+      "dubai_tourism_collapse": "Tourism contributes 30% of Dubai GDP — visitor arrivals collapsed since war began, hotels emptying"
+    },
+    "war_termination_conditions": {
+      "will_push_us_for_ceasefire_when": "Expat exodus accelerates or desalination/port infrastructure is directly threatened",
+      "red_line_for_neutrality_break": "Direct Iranian strike on Jebel Ali port or desalination infrastructure",
+      "diplomatic_leverage": "Financial markets (DIFC, Abu Dhabi sovereign wealth), logistics hub status, F-35 operator, US base hosting"
+    },
     "risk_tolerance": 0.2,
     "alliance_network": ["United States", "Saudi Arabia"],
+    "adversaries": ["Iran"],
     "initial_force_strength": 20,
     "initial_economic_health": 0.5
   },
@@ -333,14 +400,60 @@
     "actor_name": "Qatar",
     "actor_type": "NationState",
     "tier": "operational",
-    "description": "Al Udeid base (CENTCOM forward HQ) hit by Iran. Ras Laffan LNG facility destroyed (17% capacity, $20B/year loss, 3-5 year repair). Mediation role via Al Jazeera and diplomatic channels.",
+    "description": "Al Udeid base (CENTCOM forward HQ) hit by Iran. Ras Laffan LNG facility destroyed (17% capacity, $20B/year loss, 3-5 year repair). Mediation role via Al Jazeera and diplomatic channels. Tiny citizen population (~380,000) with 85% expats. North Field LNG (30% of world LNG supply) is existentially critical.",
     "strategic_doctrine": "Mediation diplomacy, protect LNG assets, maintain relationships with all sides",
     "primary_objective": "End the war before more infrastructure is destroyed",
+    "existential_vulnerabilities": {
+      "water_security": "99% dependent on desalination — virtually zero natural freshwater. 2 days of reserves without desalination",
+      "food_security": "Imports 90% of food — experienced blockade vulnerability during 2017 GCC crisis",
+      "expat_dependency": "85% of population is expatriate — citizen population only ~380,000. Entire economy collapses without expat workforce",
+      "tourism_revenue_pct": 10,
+      "oil_export_disruption_impact": "60% of GDP from LNG/hydrocarbon exports — North Field produces 30% of world LNG supply",
+      "desalination_plants_at_risk": ["Ras Abu Fontas", "Umm Al Houl"],
+      "north_field_lng": "30% of global LNG supply — already 17% capacity destroyed. Further strikes would trigger European energy crisis",
+      "al_udeid_leverage": "Hosts CENTCOM forward HQ — gives Qatar direct leverage over US military operations"
+    },
+    "war_termination_conditions": {
+      "will_push_us_for_ceasefire_when": "Further LNG infrastructure attacks or desalination plants targeted",
+      "red_line_for_neutrality_break": "Iran targeting remaining North Field capacity or desalination plants",
+      "diplomatic_leverage": "Al Udeid Air Base hosting (CENTCOM forward HQ), Al Jazeera media influence, LNG supply to Europe/Asia, mediation relationships with Iran"
+    },
     "risk_tolerance": 0.1,
     "negotiation_willingness": 0.9,
     "alliance_network": ["United States", "GCC"],
+    "adversaries": ["Iran"],
     "initial_force_strength": 5,
     "initial_economic_health": 0.35
+  },
+  {
+    "actor_id": "kuwait",
+    "actor_name": "Kuwait",
+    "actor_type": "NationState",
+    "tier": "operational",
+    "description": "Mina al-Ahmadi oil storage hit by Iranian drone strike. Small country with traumatic memory of 1990 Iraqi invasion. Heavily dependent on US security guarantee. Oil-dominated economy with limited diversification.",
+    "strategic_doctrine": "Total reliance on US security umbrella, avoid provocation, preserve oil exports at all costs",
+    "primary_objective": "Survive the war without becoming a primary target, maintain oil export capacity",
+    "existential_vulnerabilities": {
+      "water_security": "95% dependent on desalination — Doha and Az-Zour plants critical. 3 days of reserves",
+      "food_security": "Imports 85% of food — single port (Shuwaikh) is primary food import channel",
+      "expat_dependency": "70% of population is expatriate — essential for oil sector operations",
+      "tourism_revenue_pct": 2,
+      "oil_export_disruption_impact": "90% of government revenue from oil — Mina al-Ahmadi storage already hit",
+      "desalination_plants_at_risk": ["Doha", "Az-Zour", "Sulaibiya"],
+      "invasion_trauma": "1990 Iraqi invasion deeply shapes national psyche — existential vulnerability to regional aggression",
+      "geographic_vulnerability": "Small country (17,818 km2) entirely within Iranian missile range, minimal strategic depth"
+    },
+    "war_termination_conditions": {
+      "will_push_us_for_ceasefire_when": "Oil infrastructure faces sustained attack or desalination is targeted",
+      "red_line_for_neutrality_break": "Direct sustained Iranian strikes on sovereign territory",
+      "diplomatic_leverage": "US base hosting (Camp Arifjan, Ali Al Salem), oil production decisions, Kuwait Investment Authority holdings"
+    },
+    "risk_tolerance": 0.1,
+    "negotiation_willingness": 0.8,
+    "alliance_network": ["United States", "Saudi Arabia", "GCC"],
+    "adversaries": ["Iran"],
+    "initial_force_strength": 10,
+    "initial_economic_health": 0.45
   },
   {
     "actor_id": "turkey",

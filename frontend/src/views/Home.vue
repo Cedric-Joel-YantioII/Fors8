@@ -4,8 +4,7 @@
     <nav class="nav">
       <div class="nav-brand">FORS8</div>
       <div class="nav-links">
-        <router-link to="/chat" class="nav-link">Chat</router-link>
-        <router-link to="/settings" class="nav-link">Settings</router-link>
+        <router-link to="/workspace" class="nav-link">Workspace</router-link>
         <a href="https://github.com/666ghj/MiroFish" target="_blank" class="nav-link">GitHub <span class="arrow">↗</span></a>
       </div>
     </nav>
@@ -116,7 +115,7 @@ import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import HistoryDatabase from '../components/HistoryDatabase.vue'
 import Fors8Logo3D from '../components/Fors8Logo3D.vue'
-import { setPendingUpload } from '../store/pendingUpload'
+// setPendingUpload no longer needed — submit() calls /api/predict directly
 
 const router = useRouter()
 const mounted = ref(false)
@@ -172,10 +171,41 @@ const autoResize = () => {
   el.style.height = Math.min(el.scrollHeight, 160) + 'px'
 }
 
-const submit = () => {
+const submit = async () => {
   if (!canSubmit.value || loading.value) return
-  setPendingUpload([...files.value], query.value, 'geopolitical')
-  router.push('/process/new')
+  loading.value = true
+  try {
+    // Build request — if files are attached, use FormData; otherwise JSON
+    let resp
+    if (files.value.length > 0) {
+      const formData = new FormData()
+      formData.append('question', query.value.trim())
+      files.value.forEach(f => formData.append('files', f))
+      resp = await fetch('/api/predict', { method: 'POST', body: formData })
+    } else {
+      resp = await fetch('/api/predict', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: query.value.trim() })
+      })
+    }
+    if (!resp.ok) {
+      const errData = await resp.json().catch(() => ({}))
+      alert(errData.error || errData.message || `Server error (${resp.status})`)
+      return
+    }
+    const data = await resp.json()
+    const predictionId = data.prediction_id || data.id
+    if (predictionId) {
+      router.push(`/predict/${predictionId}`)
+    } else {
+      alert('No prediction ID returned from server.')
+    }
+  } catch (e) {
+    alert('Network error: ' + e.message)
+  } finally {
+    loading.value = false
+  }
 }
 
 onMounted(() => {
@@ -184,14 +214,13 @@ onMounted(() => {
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap');
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 .page {
   min-height: 100vh;
   background: #fff;
-  font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+  font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   color: #111;
   -webkit-font-smoothing: antialiased;
 }
@@ -208,7 +237,7 @@ onMounted(() => {
 }
 
 .nav-brand {
-  font-family: 'DM Mono', monospace;
+  font-family: 'IBM Plex Mono', 'SF Mono', 'Menlo', monospace;
   font-weight: 500;
   font-size: 13px;
   letter-spacing: 2px;
@@ -252,7 +281,7 @@ onMounted(() => {
 .hero.visible { opacity: 1; transform: none; }
 
 .tag {
-  font-family: 'DM Mono', monospace;
+  font-family: 'IBM Plex Mono', 'SF Mono', 'Menlo', monospace;
   font-size: 11px;
   letter-spacing: 0.5px;
   color: #999;
@@ -314,7 +343,7 @@ h1 {
   border-radius: 6px;
   font-size: 12px;
   color: #444;
-  font-family: 'DM Mono', monospace;
+  font-family: 'IBM Plex Mono', 'SF Mono', 'Menlo', monospace;
 }
 .chip span { max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .chip svg { color: #999; flex-shrink: 0; }
@@ -362,7 +391,7 @@ h1 {
   border: none;
   outline: none;
   resize: none;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 15px;
   line-height: 1.5;
   color: #111;
@@ -404,7 +433,7 @@ h1 {
   margin-top: 8px;
   font-size: 11px;
   color: #bbb;
-  font-family: 'DM Mono', monospace;
+  font-family: 'IBM Plex Mono', 'SF Mono', 'Menlo', monospace;
   padding: 0 4px;
 }
 
@@ -437,7 +466,7 @@ h1 {
 }
 
 .stat-val {
-  font-family: 'DM Mono', monospace;
+  font-family: 'IBM Plex Mono', 'SF Mono', 'Menlo', monospace;
   font-size: 28px;
   font-weight: 500;
   letter-spacing: -0.5px;
@@ -486,7 +515,7 @@ h1 {
 .step:last-child { border-bottom: none; }
 
 .step-num {
-  font-family: 'DM Mono', monospace;
+  font-family: 'IBM Plex Mono', 'SF Mono', 'Menlo', monospace;
   font-size: 12px;
   color: #ccc;
   padding-top: 2px;

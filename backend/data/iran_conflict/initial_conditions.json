@@ -145,7 +145,168 @@
     "production_gap": "New interceptor production deal signed Dec 2025 but takes years to deliver. Israel entering defense gap."
   },
 
+  "energy_infrastructure": {
+    "saudi_aramco_damage": "Abqaiq processing facility struck, Ras Tanura terminal damaged",
+    "qatar_lng": "North Field operations reduced 40% due to shipping insurance costs",
+    "uae_ports": "Jebel Ali port insurance premiums 10x, some shippers rerouting",
+    "kuwait_oil": "Mina al-Ahmadi storage hit by drone strike",
+    "iraq_oil": "Basra terminal operations disrupted",
+    "iran_refineries": "Abadan, Isfahan refineries struck by US/Israel",
+    "hormuz_status": "Closed — Iran mining + IRGC fast boats",
+    "global_oil_impact": "3-5 million barrels/day offline, prices at $119"
+  },
+
+  "humanitarian_crisis": {
+    "gcc_expat_exodus": "Estimated 2 million expats have left UAE/Qatar/Kuwait since war began",
+    "gcc_desalination_threat": "Iran has explicitly threatened desalination plants",
+    "iran_civilian_casualties": 12000,
+    "lebanon_displacement": 500000,
+    "global_food_price_impact": "Wheat +40%, shipping costs +300% through Suez alternative routes"
+  },
+
   "max_rounds": 30,
   "geo_time_step_hours": 24,
-  "dual_llm_enabled": false
+  "dual_llm_enabled": false,
+
+  "submarine_cables": {
+    "description": "14+ submarine fiber optic cables transit the Strait of Hormuz and Persian Gulf, carrying approximately 17-25% of global internet traffic",
+    "major_cables": [
+      {"name": "FLAG/FALCON", "route": "UK-India via Gulf", "capacity_tbps": 10, "landing_points": ["Fujairah UAE", "Mumbai"]},
+      {"name": "SEA-ME-WE 3", "route": "SE Asia-W Europe via Gulf", "capacity_tbps": 0.96, "landing_points": ["Fujairah UAE", "Jeddah KSA"]},
+      {"name": "SEA-ME-WE 4", "route": "SE Asia-W Europe via Gulf", "capacity_tbps": 1.28, "landing_points": ["Fujairah UAE", "Jeddah KSA"]},
+      {"name": "SEA-ME-WE 5", "route": "SE Asia-W Europe via Gulf", "capacity_tbps": 24, "landing_points": ["Fujairah UAE", "Jeddah KSA", "Djibouti"]},
+      {"name": "AAE-1", "route": "Asia-Africa-Europe", "capacity_tbps": 40, "landing_points": ["Fujairah UAE", "Aden Yemen"]},
+      {"name": "EIG", "route": "Europe-India Gateway", "capacity_tbps": 3.84, "landing_points": ["Fujairah UAE", "Mumbai"]},
+      {"name": "IMEWE", "route": "India-ME-W Europe", "capacity_tbps": 3.84, "landing_points": ["Fujairah UAE", "Mumbai", "Jeddah KSA"]},
+      {"name": "Gulf Bridge International", "route": "Intra-Gulf", "capacity_tbps": 100, "landing_points": ["Kuwait", "Bahrain", "Qatar", "UAE"]}
+    ],
+    "vulnerability": "Cables at 50-100m depth in Hormuz narrows, within range of Iranian submarines (Fateh-class, Ghadir-class) and sea mines",
+    "iran_capability": "Iran has Ghadir-class midget submarines, mine-laying capability, and IRGC Navy divers trained for underwater sabotage",
+    "economic_impact_if_severed": "Estimated $1.5-4 billion per day in disrupted digital commerce; banking, oil trading, logistics communications severely impacted",
+    "redundancy": "Limited — most Gulf-connected cables converge at Fujairah, creating a single point of failure"
+  },
+
+  "gcc_water_vulnerability": {
+    "description": "GCC states depend on desalination for 60-99% of potable water, with only 2-5 days of reserves",
+    "countries": {
+      "qatar": {
+        "desalination_dependency_pct": 99,
+        "natural_water_ratio": "Consumes approximately 17,000x its naturally occurring renewable freshwater",
+        "major_plants": ["Ras Abu Fontas (272,000 m3/day)", "Umm Al Houl (621,000 m3/day)"],
+        "reserves_days": 2,
+        "population_at_risk": 2900000
+      },
+      "kuwait": {
+        "desalination_dependency_pct": 95,
+        "natural_water_ratio": "Consumes approximately 12,000x its naturally occurring renewable freshwater",
+        "major_plants": ["Az-Zour South (486,000 m3/day)", "Doha East (272,000 m3/day)"],
+        "reserves_days": 3,
+        "population_at_risk": 4300000
+      },
+      "uae": {
+        "desalination_dependency_pct": 90,
+        "natural_water_ratio": "Consumes approximately 8,000x its naturally occurring renewable freshwater",
+        "major_plants": ["Taweelah (909,000 m3/day - world's largest)", "Jebel Ali (636,000 m3/day)", "Fujairah (591,000 m3/day)"],
+        "reserves_days": 3,
+        "population_at_risk": 10000000
+      },
+      "bahrain": {
+        "desalination_dependency_pct": 97,
+        "major_plants": ["Al Dur (218,000 m3/day)", "Al Hidd (273,000 m3/day)"],
+        "reserves_days": 2,
+        "population_at_risk": 1500000
+      },
+      "saudi_arabia": {
+        "desalination_dependency_pct": 60,
+        "major_plants": ["Ras Al Khair (1,025,000 m3/day - largest in world)", "Jubail (800,000 m3/day)", "Shoaiba (880,000 m3/day)"],
+        "reserves_days": 5,
+        "east_coast_vulnerability": "Jubail and Ras Al Khair plants are within Iranian missile range (300km from Iranian coast)",
+        "population_at_risk": 36000000
+      }
+    },
+    "scenario_impact": "If Iran strikes 3-4 major desalination plants, 15-20 million people face water crisis within 72 hours"
+  },
+
+  "gcc_food_dependency": {
+    "description": "GCC states import 80-95% of food, primarily through maritime routes vulnerable to disruption",
+    "countries": {
+      "qatar": {"import_pct": 90, "strategic_reserves_months": 6, "main_sources": ["Brazil", "India", "Australia", "USA"]},
+      "uae": {"import_pct": 85, "strategic_reserves_months": 3, "main_sources": ["India", "Brazil", "USA", "Australia"]},
+      "kuwait": {"import_pct": 90, "strategic_reserves_months": 4, "main_sources": ["Brazil", "India", "Australia"]},
+      "saudi_arabia": {"import_pct": 80, "strategic_reserves_months": 6, "main_sources": ["Brazil", "India", "USA", "Argentina"]},
+      "bahrain": {"import_pct": 92, "strategic_reserves_months": 2, "main_sources": ["Saudi Arabia", "India", "Brazil"]}
+    },
+    "import_routes": {
+      "hormuz_dependent_pct": 60,
+      "suez_dependent_pct": 25,
+      "bab_el_mandeb_dependent_pct": 15
+    },
+    "if_hormuz_closed": "60% of food imports disrupted; wheat prices surge 40-80%; rice shortages within 2-4 weeks"
+  },
+
+  "iran_geography": {
+    "description": "Iran's geography makes ground invasion extremely difficult — no modern army has successfully invaded Iran",
+    "total_area_km2": 1648195,
+    "comparison": "3.5x the size of Iraq, larger than France+Germany+UK combined",
+    "terrain": {
+      "zagros_mountains": {
+        "description": "1,600km mountain chain along western border, average elevation 3,000-4,000m",
+        "military_significance": "Natural fortress — any invasion from Iraq/Turkey must cross these mountains through limited passes",
+        "passes": "Only 4-5 usable mountain passes for heavy armor, all pre-sighted by Iranian artillery"
+      },
+      "elburz_mountains": {
+        "description": "Separates Tehran from Caspian coast, peaks to 5,671m (Mt Damavand)",
+        "military_significance": "Protects capital from northern approach"
+      },
+      "central_plateau": {
+        "description": "Vast desert interior (Dasht-e Kavir, Dasht-e Lut) — uninhabitable salt desert",
+        "military_significance": "No concealment, extreme heat (ground temp 80°C in Lut), impossible logistics"
+      }
+    },
+    "distance_to_tehran": {
+      "from_iraq_border_km": 550,
+      "from_afghan_border_km": 900,
+      "from_turkey_border_km": 700,
+      "from_gulf_coast_km": 1000
+    },
+    "population_factor": {
+      "total_population": 88000000,
+      "military_age_males": 23000000,
+      "basij_militia": 600000,
+      "irgc_ground_forces": 150000,
+      "regular_army": 350000
+    },
+    "underground_facilities": {
+      "fordow": "Built 80m under mountain near Qom, survived Israeli/US strikes",
+      "natanz": "Partially underground, heavily damaged but rebuilt deeper",
+      "imam_ali_missile_base": "Network of tunnels in Zagros mountains, houses medium-range ballistic missiles",
+      "underground_cities": "Multiple underground weapons factories and command centers mapped by satellite but unreachable by conventional bunker busters"
+    },
+    "historical_context": "No foreign army has occupied Tehran since the Anglo-Soviet invasion of 1941, and that required a two-front surprise attack while Iran was neutral. The US military estimated 500,000+ troops and 18-24 months for a ground invasion in 2003 planning studies.",
+    "us_military_assessment": "2003 DoD planning studies concluded ground invasion of Iran would require 500,000+ troops minimum, 18-24 month campaign, with estimated 10,000-20,000 US casualties, making it politically impossible"
+  },
+
+  "suez_bab_el_mandeb_threat": {
+    "houthi_capability": {
+      "anti_ship_missiles": ["C-802 (120km range)", "P-800 Oniks (300km range, from Iran)", "Quds cruise missile"],
+      "attack_drones": ["Samad-3 (1,500km range)", "Wa'id kamikaze drones"],
+      "sea_mines": "Iranian-supplied EM-52 rising mines",
+      "small_boats": "Explosive-laden remote-controlled boats",
+      "demonstrated_attacks_2024_2025": 120,
+      "ships_hit": 18,
+      "assessment": "Houthis have demonstrated sustained ability to threaten Red Sea shipping despite US/UK Operation Prosperity Guardian"
+    },
+    "hezbollah_naval": {
+      "anti_ship_missiles": "C-802 (used successfully against INS Hanit in 2006)",
+      "assessment": "Limited naval capability but could threaten Eastern Mediterranean shipping"
+    },
+    "economic_impact": {
+      "suez_daily_trade_value_usd": 9500000000,
+      "global_trade_pct_through_suez": 12,
+      "rerouting_cost_per_ship": 1000000,
+      "rerouting_days_added": 10,
+      "insurance_premium_increase_pct": 300,
+      "2024_disruption_impact": "30-40% drop in Suez traffic, $200B+ annual cost to global economy"
+    }
+  }
 }

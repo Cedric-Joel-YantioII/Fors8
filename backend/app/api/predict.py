@@ -49,15 +49,15 @@ def start_prediction():
 
         logger.info(f"Predict request: question='{question[:50]}...' endpoint={vllm_endpoint} model={model_name}")
 
-        # Handle file uploads (ingest into data pipeline)
+        # Handle file uploads — collect contents into seed_documents so the
+        # prediction pipeline can include them in graph building and ingestion.
         MAX_FILE_SIZE = 50 * 1024 * 1024  # 50 MB
         MAX_FILES = 10
         ALLOWED_EXTENSIONS = {'.pdf', '.md', '.txt', '.doc', '.docx', '.png', '.jpg', '.jpeg'}
 
+        seed_documents = []
         uploaded_files = request.files.getlist('files')
         if uploaded_files:
-            from ..services.data_ingestor import DataIngestor, DataCategory, SourceCredibility
-            ingestor = DataIngestor()
             for f in uploaded_files[:MAX_FILES]:
                 if not f.filename:
                     continue
@@ -75,21 +75,19 @@ def start_prediction():
                     logger.warning(f"Rejected oversized upload: {safe_name}")
                     continue
                 content = content_bytes.decode('utf-8', errors='replace')
-                ingestor.ingest_document(
-                    text=content,
-                    source_name=safe_name,
-                    category=DataCategory.INTELLIGENCE_REPORT,
-                    credibility=SourceCredibility.INSTITUTIONAL,
-                )
-                logger.info(f"Ingested uploaded file: {safe_name}")
+                seed_documents.append({"name": safe_name, "content": content})
+                logger.info(f"Collected uploaded file for pipeline: {safe_name}")
 
         # Create prediction job (runs in background thread)
+        # seed_documents are carried on the PredictionJob so the pipeline
+        # can include them in graph building and DataIngestor ingestion.
         job = create_prediction(
             question=question,
             model_name=model_name,
             vllm_endpoint=vllm_endpoint,
-            num_runs=3,  # Start with 3 runs for faster results
-            num_agents=17,  # Use the 17 defined actors (not 100K mass agents for first test)
+            num_runs=30,
+            num_agents=3000,
+            seed_documents=seed_documents,
         )
 
         return jsonify({
@@ -120,10 +118,19 @@ def get_prediction(prediction_id: str):
         return jsonify({"error": "Invalid prediction ID"}), 400
 
     job = get_job(prediction_id)
-    if not job:
-        return jsonify({"error": "Prediction not found"}), 404
+    if job:
+        return jsonify(job.to_dict())
 
-    return jsonify(job.to_dict())
+    # Fall back to database for completed/persisted predictions
+    try:
+        from ..services.database import get_db
+        db_pred = get_db().get_prediction(prediction_id)
+        if db_pred:
+            return jsonify(db_pred)
+    except Exception:
+        pass
+
+    return jsonify({"error": "Prediction not found"}), 404
 
 
 @predict_bp.route('/gpu/status', methods=['GET'])

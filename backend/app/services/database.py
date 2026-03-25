@@ -75,18 +75,26 @@ class Database:
     # Conversations
     # ------------------------------------------------------------------
 
-    def create_conversation(self, title: str) -> Optional[str]:
-        """Insert a new conversation row and return its id."""
+    def create_conversation(self, title: str) -> Optional[Dict[str, Any]]:
+        """Insert a new conversation row and return it as a dict."""
         cur = self._cursor()
         if cur is None:
             return None
         try:
-            conv_id = str(uuid.uuid4())
+            now = datetime.utcnow()
             cur.execute(
-                "INSERT INTO conversations (id, title, created_at) VALUES (%s, %s, %s)",
-                (conv_id, title, datetime.utcnow()),
+                "INSERT INTO conversations (title, created_at, updated_at) VALUES (%s, %s, %s) RETURNING id, title, created_at, updated_at",
+                (title, now, now),
             )
-            return conv_id
+            row = cur.fetchone()
+            if row:
+                return {
+                    "id": row["id"],
+                    "title": row["title"],
+                    "created_at": row["created_at"].isoformat() if row["created_at"] else None,
+                    "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
+                }
+            return None
         except Exception as exc:
             logger.error("create_conversation failed: %s", exc)
             return None
@@ -98,7 +106,7 @@ class Database:
             return None
         try:
             cur.execute(
-                "SELECT id, title, created_at FROM conversations WHERE id = %s",
+                "SELECT id, title, created_at, updated_at FROM conversations WHERE id = %s",
                 (conversation_id,),
             )
             row = cur.fetchone()
@@ -106,6 +114,7 @@ class Database:
                 return None
             conv = dict(row)
             conv['created_at'] = conv['created_at'].isoformat() if conv.get('created_at') else None
+            conv['updated_at'] = conv['updated_at'].isoformat() if conv.get('updated_at') else None
             conv['messages'] = self.get_messages(conversation_id) or []
             return conv
         except Exception as exc:
@@ -123,23 +132,57 @@ class Database:
                     c.id,
                     c.title,
                     c.created_at,
-                    COUNT(m.id)      AS message_count,
-                    MAX(m.content)   AS last_message
+                    c.updated_at,
+                    COUNT(m.id)  AS message_count,
+                    (SELECT m2.content FROM messages m2
+                     WHERE m2.conversation_id = c.id
+                     ORDER BY m2.created_at DESC LIMIT 1) AS last_message
                 FROM conversations c
                 LEFT JOIN messages m ON m.conversation_id = c.id
-                GROUP BY c.id, c.title, c.created_at
-                ORDER BY c.created_at DESC
+                GROUP BY c.id, c.title, c.created_at, c.updated_at
+                ORDER BY COALESCE(c.updated_at, c.created_at) DESC
             """)
             rows = cur.fetchall()
             result = []
             for row in rows:
                 d = dict(row)
                 d['created_at'] = d['created_at'].isoformat() if d.get('created_at') else None
+                d['updated_at'] = d['updated_at'].isoformat() if d.get('updated_at') else None
                 result.append(d)
             return result
         except Exception as exc:
             logger.error("list_conversations failed: %s", exc)
             return []
+
+    def update_conversation(self, conversation_id: str, **kwargs) -> bool:
+        """Update conversation fields (e.g. title). Returns True on success."""
+        cur = self._cursor()
+        if cur is None:
+            return False
+        try:
+            # Build SET clause from kwargs (only allow safe column names)
+            allowed = {'title', 'updated_at'}
+            sets = []
+            values = []
+            for k, v in kwargs.items():
+                if k in allowed:
+                    sets.append(f"{k} = %s")
+                    values.append(v)
+            if not sets:
+                return False
+            # Always bump updated_at
+            if 'updated_at' not in kwargs:
+                sets.append("updated_at = %s")
+                values.append(datetime.utcnow())
+            values.append(conversation_id)
+            cur.execute(
+                f"UPDATE conversations SET {', '.join(sets)} WHERE id = %s",
+                tuple(values),
+            )
+            return True
+        except Exception as exc:
+            logger.error("update_conversation failed: %s", exc)
+            return False
 
     def delete_conversation(self, conversation_id: str) -> bool:
         """Delete a conversation and its associated messages."""
@@ -164,22 +207,61 @@ class Database:
         role: str,
         content: str,
         prediction_id: Optional[str] = None,
-    ) -> Optional[str]:
-        """Append a message to a conversation."""
+    ) -> Optional[Dict[str, Any]]:
+        """Append a message to a conversation. Returns the message as a dict."""
         cur = self._cursor()
         if cur is None:
             return None
         try:
-            msg_id = str(uuid.uuid4())
+            now = datetime.utcnow()
             cur.execute(
-                """INSERT INTO messages (id, conversation_id, role, content, prediction_id, created_at)
-                   VALUES (%s, %s, %s, %s, %s, %s)""",
-                (msg_id, conversation_id, role, content, prediction_id, datetime.utcnow()),
+                """INSERT INTO messages (conversation_id, role, content, prediction_id, created_at)
+                   VALUES (%s, %s, %s, %s, %s)
+                   RETURNING id""",
+                (conversation_id, role, content, prediction_id, now),
             )
-            return msg_id
+            row = cur.fetchone()
+            msg_id = row["id"] if row else None
+            # Also bump the conversation's updated_at timestamp
+            cur.execute(
+                "UPDATE conversations SET updated_at = %s WHERE id = %s",
+                (now, conversation_id),
+            )
+            return {
+                "id": msg_id,
+                "role": role,
+                "content": content,
+                "prediction_id": prediction_id,
+                "created_at": now.isoformat(),
+            }
         except Exception as exc:
             logger.error("add_message failed: %s", exc)
             return None
+
+    def update_message(self, message_id: str, **kwargs) -> bool:
+        """Update message fields (e.g. prediction_id). Returns True on success."""
+        cur = self._cursor()
+        if cur is None:
+            return False
+        try:
+            allowed = {'prediction_id', 'content', 'role'}
+            sets = []
+            values = []
+            for k, v in kwargs.items():
+                if k in allowed:
+                    sets.append(f"{k} = %s")
+                    values.append(v)
+            if not sets:
+                return False
+            values.append(message_id)
+            cur.execute(
+                f"UPDATE messages SET {', '.join(sets)} WHERE id = %s",
+                tuple(values),
+            )
+            return True
+        except Exception as exc:
+            logger.error("update_message failed: %s", exc)
+            return False
 
     def get_messages(self, conversation_id: str) -> List[Dict[str, Any]]:
         """Return messages for a conversation ordered by time."""
@@ -210,17 +292,46 @@ class Database:
     # ------------------------------------------------------------------
 
     def save_prediction(self, prediction_data: Dict[str, Any]) -> Optional[str]:
-        """Persist a prediction dict. Returns prediction_id."""
+        """Persist a prediction dict (upsert). Returns prediction_id."""
         cur = self._cursor()
         if cur is None:
             return None
         try:
             pred_id = prediction_data.get('prediction_id', str(uuid.uuid4()))
             cur.execute(
-                """INSERT INTO predictions (id, data, created_at)
-                   VALUES (%s, %s, %s)
-                   ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data""",
-                (pred_id, json.dumps(prediction_data, default=str), datetime.utcnow()),
+                """INSERT INTO predictions (id, question, status, progress_pct, progress_message,
+                       model_name, num_agents, num_runs, outcomes, actor_results, answers,
+                       gpu_cost, error, graph_id, created_at, completed_at)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                   ON CONFLICT (id) DO UPDATE SET
+                       status = EXCLUDED.status,
+                       progress_pct = EXCLUDED.progress_pct,
+                       progress_message = EXCLUDED.progress_message,
+                       outcomes = EXCLUDED.outcomes,
+                       actor_results = EXCLUDED.actor_results,
+                       answers = EXCLUDED.answers,
+                       gpu_cost = EXCLUDED.gpu_cost,
+                       error = EXCLUDED.error,
+                       graph_id = EXCLUDED.graph_id,
+                       completed_at = EXCLUDED.completed_at""",
+                (
+                    pred_id,
+                    prediction_data.get('question', ''),
+                    prediction_data.get('status', 'queued'),
+                    prediction_data.get('progress_pct', 0),
+                    prediction_data.get('progress_message', ''),
+                    prediction_data.get('model_name', ''),
+                    prediction_data.get('num_agents', 0),
+                    prediction_data.get('num_runs', 0),
+                    json.dumps(prediction_data.get('outcomes', {}), default=str),
+                    json.dumps(prediction_data.get('actor_results', {}), default=str),
+                    json.dumps(prediction_data.get('answers', {}), default=str),
+                    prediction_data.get('gpu_cost', 0),
+                    prediction_data.get('error', ''),
+                    prediction_data.get('graph_id', ''),
+                    prediction_data.get('created_at') or datetime.utcnow(),
+                    prediction_data.get('completed_at') or None,
+                ),
             )
             return pred_id
         except Exception as exc:
@@ -228,20 +339,30 @@ class Database:
             return None
 
     def update_prediction(self, prediction_id: str, updates: Dict[str, Any]) -> bool:
-        """Merge *updates* into the stored prediction JSON."""
+        """Update specific fields on a prediction row."""
         cur = self._cursor()
         if cur is None:
             return False
         try:
-            cur.execute("SELECT data FROM predictions WHERE id = %s", (prediction_id,))
-            row = cur.fetchone()
-            if not row:
-                return False
-            existing = json.loads(row['data']) if isinstance(row['data'], str) else row['data']
-            existing.update(updates)
+            # Map of allowed fields to their SQL types (jsonb fields need json.dumps)
+            jsonb_fields = {'outcomes', 'actor_results', 'answers'}
+            allowed = {'question', 'status', 'progress_pct', 'progress_message',
+                       'model_name', 'num_agents', 'num_runs', 'outcomes',
+                       'actor_results', 'answers', 'gpu_cost', 'error',
+                       'graph_id', 'completed_at'}
+            sets = []
+            vals = []
+            for k, v in updates.items():
+                if k not in allowed:
+                    continue
+                sets.append(f"{k} = %s")
+                vals.append(json.dumps(v, default=str) if k in jsonb_fields else v)
+            if not sets:
+                return True  # nothing to update
+            vals.append(prediction_id)
             cur.execute(
-                "UPDATE predictions SET data = %s WHERE id = %s",
-                (json.dumps(existing, default=str), prediction_id),
+                f"UPDATE predictions SET {', '.join(sets)} WHERE id = %s",
+                vals,
             )
             return True
         except Exception as exc:
@@ -254,13 +375,15 @@ class Database:
         if cur is None:
             return None
         try:
-            cur.execute("SELECT id, data, created_at FROM predictions WHERE id = %s", (prediction_id,))
+            cur.execute("SELECT * FROM predictions WHERE id = %s", (prediction_id,))
             row = cur.fetchone()
             if not row:
                 return None
-            data = json.loads(row['data']) if isinstance(row['data'], str) else row['data']
-            data['_created_at'] = row['created_at'].isoformat() if row.get('created_at') else None
-            return data
+            d = dict(row)
+            d['prediction_id'] = d.pop('id', prediction_id)
+            d['created_at'] = d['created_at'].isoformat() if d.get('created_at') else None
+            d['completed_at'] = d['completed_at'].isoformat() if d.get('completed_at') else None
+            return d
         except Exception as exc:
             logger.error("get_prediction failed: %s", exc)
             return None
@@ -272,7 +395,7 @@ class Database:
             return []
         try:
             cur.execute(
-                """SELECT DISTINCT p.id, p.data, p.created_at
+                """SELECT DISTINCT p.*
                    FROM predictions p
                    JOIN messages m ON m.prediction_id = p.id
                    WHERE m.conversation_id = %s
@@ -282,9 +405,11 @@ class Database:
             rows = cur.fetchall()
             result = []
             for row in rows:
-                data = json.loads(row['data']) if isinstance(row['data'], str) else row['data']
-                data['_created_at'] = row['created_at'].isoformat() if row.get('created_at') else None
-                result.append(data)
+                d = dict(row)
+                d['prediction_id'] = d.pop('id')
+                d['created_at'] = d['created_at'].isoformat() if d.get('created_at') else None
+                d['completed_at'] = d['completed_at'].isoformat() if d.get('completed_at') else None
+                result.append(d)
             return result
         except Exception as exc:
             logger.error("get_predictions_for_conversation failed: %s", exc)

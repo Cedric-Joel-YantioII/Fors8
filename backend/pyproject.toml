@@ -29,6 +29,9 @@ dependencies = [
     "charset-normalizer>=3.0.0",
     "chardet>=5.0.0",
     
+    # 金融市场数据
+    "yfinance>=0.2.36",
+
     # 工具库
     "python-dotenv>=1.0.0",
     "pydantic>=2.0.0",
