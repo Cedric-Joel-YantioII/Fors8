@@ -175,6 +175,68 @@
     }
   },
 
+  "us_israel_advantages": {
+    "description": "Factors favoring US/Israel coalition that must be weighed against Iran's asymmetric advantages",
+    "air_superiority": {
+      "status": "Total and unchallenged — US/Israel control the airspace over the entire theater",
+      "assets": "F-35s (stealth, Iran cannot detect), F-22s, B-2 bombers, carrier-based F/A-18s, aerial refueling fleet",
+      "iran_has_no_answer": "Iran has NO modern fighter aircraft capable of contesting US/Israeli air superiority. Iran's air force flies 1970s-era F-14s and F-4s.",
+      "implication": "US/Israel can strike ANY target in Iran at will. Iran cannot prevent this. Every Iranian military facility, leadership compound, and infrastructure node is vulnerable from the air."
+    },
+    "intelligence_superiority": {
+      "five_eyes": "US has Five Eyes intelligence network (US, UK, Australia, Canada, New Zealand) providing signals intelligence globally",
+      "satellite_constellation": "US operates 100+ military/intelligence satellites vs Iran's limited capabilities. Real-time surveillance of every Iranian military movement.",
+      "cyber_capability": "US/Israel are top-tier cyber powers (Stuxnet precedent). Can disrupt Iranian command/control, communications, power grid.",
+      "humint": "Mossad has deep penetration of Iranian military/political establishment (demonstrated by assassinations of nuclear scientists 2010-2020)",
+      "iran_intelligence_gap": "Iran relies on Chinese satellite imagery and has limited organic ISR capability"
+    },
+    "nuclear_escalation_deterrent": {
+      "israel_nuclear_arsenal": "Israel has estimated 80-90 nuclear warheads (undeclared). This is the ultimate deterrent — Iran knows any existential threat to Israel risks nuclear response.",
+      "us_nuclear_umbrella": "US extended deterrence covers Gulf allies. Nuclear escalation is theoretically possible if Iran crosses certain thresholds.",
+      "iran_has_no_nuclear_weapons": "Iran does NOT have nuclear weapons. Despite breakout capability, there is no assembled weapon. This is a fundamental asymmetry.",
+      "constraint_on_iran": "Iran cannot push for total military victory because Israel's nuclear arsenal means any existential threat triggers potential nuclear response"
+    },
+    "economic_warfare_capability": {
+      "dollar_dominance": "US controls the global reserve currency. Can freeze any country's assets, cut off SWIFT access, impose secondary sanctions on anyone trading with Iran.",
+      "sanctions_impact_on_iran": "Iran's GDP contracted ~6% under maximum pressure sanctions. Oil exports dropped from 2.5M bpd to <500K bpd. Currency lost 80% of value.",
+      "iran_economic_weakness": "Iran's economy was already struggling pre-war: 40%+ inflation, 10%+ unemployment, brain drain, infrastructure decay from decades of sanctions",
+      "oil_weapon_cuts_both_ways": "While Hormuz closure hurts global markets, it also completely cuts off Iran's own oil export revenue — Iran earns $0 while Hormuz is closed"
+    },
+    "military_industrial_capacity": {
+      "us_defense_budget": "$886 billion (2024) — more than the next 10 countries combined. Iran's defense budget: ~$10 billion.",
+      "production_capacity": "US can ramp up munitions production. Raytheon, Lockheed, Northrop Grumman have massive capacity. The constraint is time, not capability.",
+      "stockpile_depth": "US has strategic reserves of precision munitions, cruise missiles (Tomahawk inventory: 4,000+), and JDAMs",
+      "replenishment": "While Israel's interceptors are depleting, US can surge-deliver Patriot interceptors and is ramping THAAD deployment"
+    },
+    "coalition_and_alliances": {
+      "nato_article_5": "Attack on US bases could trigger NATO Article 5 consultation (though not automatic invocation for out-of-area operations)",
+      "gcc_basing": "US has forces in Qatar, UAE, Kuwait, Bahrain, Saudi Arabia — massive forward-deployed capability",
+      "israel_qualitative_military_edge": "US law requires maintaining Israel's qualitative military edge (QME) over all regional adversaries",
+      "diplomatic_weight": "US has UNSC veto power, controls IMF/World Bank, can rally G7 support"
+    },
+    "iran_military_weaknesses": {
+      "air_force": "Iran's air force is 1970s-era (F-14A Tomcats, F-4 Phantoms, F-5 Tigers). Cannot contest airspace.",
+      "navy": "Iran's navy is coastal — fast boats and midget submarines. No blue-water capability. US Navy dominates open ocean.",
+      "precision_munitions": "While Iran has improved accuracy, most Iranian missiles are still less precise than US/Israeli precision-guided munitions",
+      "command_and_control": "Iranian C2 is vulnerable to US cyber and kinetic strikes. Multiple senior commanders already killed.",
+      "economic_fragility": "Iran cannot sustain prolonged conflict economically — GDP $400B vs US $28T. Sanctions already devastating.",
+      "domestic_discontent": "Iranian population has shown willingness to protest (2019, 2022 Mahsa Amini protests). Prolonged war with 12,000+ civilian casualties could trigger internal unrest.",
+      "brain_drain": "Iran has lost millions of educated citizens to emigration. Technical talent pool is shrinking."
+    },
+    "damage_already_inflicted_on_iran": {
+      "nuclear_program": "Natanz heavily damaged. Multiple enrichment facilities struck. Even if Fordow survived, overall program significantly set back 2-5 years.",
+      "military_infrastructure": "IRGC bases, missile production facilities, radar installations struck extensively in Day 1 (900 strikes in 12 hours)",
+      "economic_damage": "Asaluyeh (South Pars) gas complex damaged — Iran's primary revenue source. Isfahan and Abadan refineries struck.",
+      "leadership_losses": "Supreme Leader Khamenei assassinated Day 1. Ali Larijani killed. IRGC Commander Pakpour killed. Defense Minister killed. Massive leadership disruption.",
+      "casualties": "5,300 military + 12,000 civilian = 17,300 total Iranian casualties in 26 days. This is devastating even for a country with high casualty tolerance."
+    },
+    "historical_precedent_favoring_us": {
+      "desert_storm_1991": "US achieved total air dominance and destroyed Iraqi military (4th largest in world) in 42 days. Iran's military is not as large.",
+      "us_has_never_lost_an_air_campaign": "The US has never been defeated in a conflict where it maintained air superiority. The question is whether air superiority alone achieves political objectives.",
+      "sanctions_pressure_works_over_time": "Maximum pressure sanctions 2018-2021 reduced Iran's oil exports by 80% and caused severe economic contraction"
+    }
+  },
+
   "nuclear_status": {
     "iran_breakout_time_pre_war": "Less than 1 week for enough HEU for one bomb (DIA assessment May 2025)",
     "iran_enriched_uranium_stockpile": "Enough 60% enriched uranium for 12+ weapons if further enriched (ODNI Nov 2024)",
