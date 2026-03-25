@@ -12,7 +12,11 @@ const routes = [
     path: '/predict/:predictionId',
     name: 'Predict',
     component: WorkspaceView,
-    props: true
+    props: route => ({
+      predictionId: route.params.predictionId,
+      initialStep: 4,
+      mode: 'prediction',
+    }),
   },
   {
     path: '/workspace',

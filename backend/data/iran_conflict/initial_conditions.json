@@ -166,7 +166,11 @@
     "china_russia_alignment": {
       "description": "War is accelerating a China-Russia-Iran strategic alignment against US hegemony",
       "china_role": "Satellite intelligence (MizarVision), possible BeiDou missile guidance, diplomatic cover at UNSC",
-      "russia_role": "Arms transfers (S-300 already delivered, S-400 possible), intelligence sharing, UNSC veto power",
+      "russia_role": "S-300 air defense delivered pre-war, S-400 negotiations ongoing. Su-35 fighter jets deal signed. Mi-28 attack helicopters. Russia-Iran quid pro quo: Iran supplied Shahed drones for Ukraine, Russia transferring military technology in return. UNSC veto protects Iran diplomatically. Reports (unconfirmed) of covert munitions resupply during the war via Caspian Sea route.",
+      "russia_iran_arms_confirmed": "S-300 (delivered 2016), Su-35 deal (2023-24), Yak-130 trainers, technology transfers in exchange for Shahed drones used in Ukraine. Russia has historically been Iran's primary advanced weapons supplier.",
+      "china_iran_arms_confirmed": "Chinese commercial components confirmed in Iranian Shahed drones (engines, microcontrollers, navigation modules — found in Ukrainian teardowns). Chinese firms sanctioned by US for missile technology transfers to Iran. Iran's drone production relies on Chinese dual-use component supply chain. MizarVision satellite imagery openly shared. BeiDou navigation system possibly integrated into Iranian missiles.",
+      "north_korea_iran_confirmed": "Iran's Shahab-3 missile derived from North Korea's Nodong. Ongoing collaboration on ballistic missile technology confirmed by UN Panel of Experts. Component and knowledge sharing continues.",
+      "covert_resupply_assessment": "During active war, Russia and China have strong incentive to resupply Iran covertly — weakening US military credibility benefits both. Caspian Sea route (Russia) and overland via Central Asia (China) are difficult to interdict. If confirmed, this would mean Iran's missile/drone stockpile is being replenished, extending the war indefinitely.",
       "multipolar_shift": "This war may be remembered as the moment US unipolar dominance ended — similar to Suez 1956 ending British Empire"
     }
   },
