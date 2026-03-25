@@ -2,15 +2,29 @@
   "scenario_name": "2026 US/Israel-Iran War - Active Conflict (March 25, 2026)",
   "start_time": "2026-03-25T00:00:00Z",
   "war_start_date": "2026-02-28",
-  "days_of_war": 25,
+  "days_of_war": 26,
 
   "phase": "conflict",
   "escalation_level": 8,
-  "oil_price": 119.0,
-  "global_risk_index": 0.85,
+  "oil_price": 126.0,
+  "global_risk_index": 0.9,
   "nuclear_threshold_status": "warning",
-  "humanitarian_impact": 0.6,
+  "humanitarian_impact": 0.7,
 
+  "strait_of_hormuz_status": {
+    "open_for_iran": true,
+    "open_for_others": false,
+    "description": "SELECTIVELY CLOSED — Iran's own tankers pass freely to China. All other commercial traffic blocked or deterred. ~70% drop in non-Iranian tanker traffic. 150+ ships anchoring outside to avoid risk. 21 confirmed attacks on merchant ships.",
+    "iran_oil_exports_during_closure": {
+      "barrels_per_day": 1500000,
+      "destination": "China (absorbs ~90% of Iran's exports)",
+      "total_shipped_since_war": "16+ million barrels since March 1",
+      "revenue_estimate": "Iran is NOT earning $0 — estimated $180M+/day in oil revenue from China trade",
+      "jask_terminal": "Iran also loads oil at Jask terminal on Gulf of Oman, bypassing Hormuz entirely"
+    },
+    "us_navy_response": "US operation to reopen Hormuz began March 19 but Navy DECLINED to escort commercial vessels — assessed as 'too risky'",
+    "dia_assessment": "Iran can keep Hormuz selectively closed for 1-6 months"
+  },
   "strait_of_hormuz_open": false,
   "bab_el_mandeb_open": true,
   "suez_canal_open": true,
@@ -47,7 +61,13 @@
     {"date": "2026-03-23", "event": "Iranian drone swarm damages US fighter jet at Al Udeid Air Base — heat-seeking drones evaded base defenses."},
     {"date": "2026-03-24", "event": "Iran strikes secret Israeli forward command center — 7 senior IDF officials killed including 2 brigadier generals. Intelligence breach suspected."},
     {"date": "2026-03-24", "event": "David's Sling interceptor stocks exhausted. Patriot batteries down to last reserve. Arrow-3 at <30% capacity. Israel entering critical defense gap."},
-    {"date": "2026-03-25", "event": "Iran formally demands reparations for war damages as precondition for any ceasefire negotiations. Demands include compensation for civilian casualties, infrastructure destruction, and nuclear facility damage."}
+    {"date": "2026-03-25", "event": "Iran formally demands reparations for war damages as precondition for any ceasefire negotiations. Demands include compensation for civilian casualties, infrastructure destruction, and nuclear facility damage."},
+    {"date": "2026-03-25", "event": "Iran REJECTS US 15-point ceasefire plan delivered via Pakistan. Calls it 'extremely maximalist and unreasonable'. IRGC statement: 'Do not call your defeat an agreement'."},
+    {"date": "2026-03-25", "event": "Missiles hit Tel Aviv — holes ripped through apartment building, 6 injured. 75th+ wave of Operation True Promise 4."},
+    {"date": "2026-03-25", "event": "Iranian drone attack hits Kuwait International Airport fuel tank."},
+    {"date": "2026-03-25", "event": "Saudi Arabia shoots down 32 Iranian drones and 1 ballistic missile in 11 hours."},
+    {"date": "2026-03-24", "event": "US announces 82nd Airborne Division deploying to Middle East (3,000-4,000 troops). Pentagon requesting $200 billion for war operations. Harvard economist estimates total cost $1 trillion+."},
+    {"date": "2026-03-20", "event": "IRGC spokesman Ali Mohammad Naini killed in US-Israeli strike hours after appearing on TV claiming full missile production capacity."}
   ],
 
   "casualty_estimates": {
@@ -55,10 +75,33 @@
     "iran_civilian": 12000,
     "israel_military": 150,
     "israel_civilian": 200,
-    "us_military": 45,
-    "hezbollah": 800,
+    "us_military_killed": 13,
+    "us_military_wounded": 290,
+    "us_military_returned_to_duty": 255,
+    "hezbollah": 1800,
     "gcc_civilian": 100,
     "minab_school_incident": 170
+  },
+
+  "iran_attrition_doctrine": {
+    "doctrine_name": "Mosaic Defense (defa-e mozaik)",
+    "description": "Iran is EXPLICITLY pursuing a war of attrition. This is documented doctrine, not speculation.",
+    "core_assumption": "Iran may lose commanders, facilities, communications — but must keep fighting. The system is designed to survive decapitation and continue operations.",
+    "strategy": "Cheap drones ($50K) vs expensive interceptors ($1-3M) = cost asymmetry bleeding Israel/US economically. Hormuz closure as economic coercion. Proxy network forcing multi-front operations.",
+    "irgc_claim": "IRGC stated March 8: 'We can fight an intense war for six months'",
+    "irgc_goal": "March 11: 'We only think of the enemy's complete surrender'",
+    "evidence_working": "Irish Times March 13: 'Iran's strategy of attrition seems to be working so far'. Al Jazeera feature: 'The Fourth Successor: How Iran planned to fight a long war'",
+    "mojtaba_khamenei_stance": "Studying 'opening of other fronts where the enemy is highly vulnerable'. Zero desire for short-term deal. Hardline IRGC consolidation.",
+    "six_month_capability": "IRGC claims Iran has resources for 6 months of intense warfare. Drone production 10K/month replenishes stocks. Russia/China resupplying via Caspian.",
+    "key_insight": "Iran is NOT fighting to negotiate — Iran is fighting to WIN through exhaustion of enemy resources. This is the opposite of what GDP-based economic models predict."
+  },
+
+  "us_war_costs": {
+    "pentagon_request": "$200 billion requested for war operations",
+    "harvard_estimate": "Total cost estimated at $1 trillion+ (Harvard economist)",
+    "troop_deployment": "82nd Airborne Division deploying (3,000-4,000 additional troops) — first ground forces committed",
+    "us_military_destroyed": "7,800+ Iranian military targets, 120 ships, 11 submarines, ~1/3 of Iran's ballistic missile launchers",
+    "iran_military_destroyed_by_us": "Despite massive US strikes, Iran continues launching 3+ waves per day"
   },
 
   "weapons_dynamics": {
@@ -123,24 +166,35 @@
     "iran_asaluyeh": "4 gas treatment plants damaged by Israeli drone strike (South Pars)"
   },
 
-  "iran_3_demands": {
-    "demand_1": "Recognition of Iran's legitimate rights including nuclear program — Iran insists its enrichment activities are legal under NPT",
-    "demand_2": "Payment of reparations for war damages — compensation for 12,000+ civilian casualties, destroyed nuclear facilities, refineries, infrastructure. Iran has not publicly named a specific dollar figure but damage estimates exceed $50 billion",
-    "demand_3": "Firm international guarantees against future aggression — must be backed by UNSC resolution, not just US promises (which Iran considers worthless after JCPOA withdrawal)",
+  "iran_5_demands": {
+    "description": "Iran's FIVE official demands as stated publicly (expanded from earlier 3). Iran says: 'No negotiations will be held prior to acceptance of ALL conditions.'",
+    "demand_1": "Complete halt to all aggression and assassinations against Iran and its allies",
+    "demand_2": "Concrete mechanisms ensuring war is not reimposed on Iran (international guarantees backed by UNSC resolution, not US promises)",
+    "demand_3": "Reparations for war damages — compensation for 12,000+ civilian casualties, destroyed infrastructure, nuclear facilities. Damage estimates exceed $50 billion",
+    "demand_4": "End of hostilities across ALL fronts including all resistance groups region-wide (Hezbollah, Houthis, Iraqi PMF)",
+    "demand_5": "Iran's sovereignty over the Strait of Hormuz must be recognized",
     "additional_demands": {
-      "us_bases_withdrawal": "Iran demands departure of ALL US military bases from GCC states — Al Udeid (Qatar), Al Dhafra (UAE), Camp Arifjan (Kuwait), Prince Sultan Air Base (Saudi Arabia), Bahrain 5th Fleet HQ. Iran views US military presence as occupation enabling aggression.",
-      "sanctions_lifted": "Complete lifting of all US sanctions including on Iran's central bank (CBI), oil exports, SWIFT access. Iran sees sanctions as economic warfare that preceded military warfare.",
-      "central_bank_unfrozen": "Unfreezing of $100+ billion in Iranian assets frozen in foreign banks. Iran views US control of global financial system (SWIFT, dollar clearing) as weaponized infrastructure.",
-      "no_regime_change_guarantee": "Explicit guarantee that US/Israel will not pursue regime change in Iran — to be enshrined in international law",
-      "nuclear_rights_recognition": "International recognition of Iran's right to full nuclear fuel cycle including enrichment to any level for peaceful purposes"
+      "us_bases_withdrawal": "Closure of ALL US military bases in Gulf — Al Udeid (Qatar), Al Dhafra (UAE), Camp Arifjan (Kuwait), Prince Sultan Air Base (Saudi Arabia), Bahrain 5th Fleet HQ",
+      "sanctions_lifted": "Complete lifting of all US sanctions including on Iran's central bank (CBI), oil exports, SWIFT access",
+      "central_bank_unfrozen": "Unfreezing of $100+ billion in Iranian assets frozen in foreign banks",
+      "nuclear_rights": "International recognition of Iran's right to full nuclear fuel cycle"
     },
-    "ceasefire_position": "Iran rejects temporary ceasefire — demands permanent end to war with guarantees. Reparations and US base withdrawal are non-negotiable preconditions for any talks. Hormuz stays closed until demands are met.",
-    "iran_leverage": "Iran holds: Hormuz closure (21M bpd), submarine cable threat (20% global internet), GCC desalination vulnerability (15-20M people at risk), continued missile capability, proxy network activation, and the demonstrated ability to strike Israeli command centers and US bases.",
+    "ceasefire_rejection_march_25": {
+      "event": "Iran REJECTED US 15-point ceasefire plan delivered via Pakistan on March 25, 2026",
+      "iran_response": "Called US proposal 'extremely maximalist and unreasonable'",
+      "fars_news_quote": "Iran does not accept a ceasefire",
+      "irgc_statement": "Do not call your defeat an agreement",
+      "iran_fm_quote": "Iran does not seek ceasefire but war must end — on Iran's terms only",
+      "status": "ZERO active negotiations. Iran says US is 'negotiating with itself'."
+    },
+    "iran_negotiation_willingness": 0.05,
+    "iran_leverage": "Hormuz selective closure (hurts everyone except Iran), submarine cable threat (20% global internet), GCC desalination vulnerability, continued missile capability (10K drones/month production), proxy network, demonstrated ability to strike Israeli command centers and US bases. Iran STILL earning $180M+/day from oil exports to China.",
     "likelihood_of_acceptance": {
-      "reparations": "VERY LOW — no precedent for attacking side paying reparations while claiming victory. US paid nothing after Iraq War despite WMD being fabricated.",
-      "us_bases_withdrawal": "EXTREMELY LOW — would end US regional hegemony. US has never voluntarily withdrawn from strategic region under military pressure. Withdrawal would signal end of American military superiority in Middle East.",
-      "sanctions_lifted": "MODERATE — sanctions relief was traded before (JCPOA 2015). Most negotiable demand. But current US political climate makes it difficult.",
-      "overall_assessment": "Iran's maximalist demands are likely opening positions for negotiation. Historical precedent (Iran-Iraq War 1988) shows Iran eventually accepts less. But Mojtaba Khamenei's IRGC-aligned leadership may have higher threshold than his father."
+      "reparations": "VERY LOW — no precedent for attacking side paying reparations",
+      "us_bases_withdrawal": "EXTREMELY LOW — would end US regional hegemony",
+      "sanctions_lifted": "MODERATE — traded before in JCPOA 2015",
+      "hormuz_sovereignty": "LOW — US will not recognize Iranian control of international waterway",
+      "overall": "Iran's demands are NOT opening positions in this war. Mojtaba Khamenei's IRGC-aligned leadership has explicitly stated 'we only think of the enemy's complete surrender.' Historical pattern (Iran-Iraq 1988) suggests Iran accepts less EVENTUALLY — but that took 8 YEARS."
     }
   },
 
@@ -181,7 +235,8 @@
       "status": "Total and unchallenged — US/Israel control the airspace over the entire theater",
       "assets": "F-35s (stealth, Iran cannot detect), F-22s, B-2 bombers, carrier-based F/A-18s, aerial refueling fleet",
       "iran_has_no_answer": "Iran has NO modern fighter aircraft capable of contesting US/Israeli air superiority. Iran's air force flies 1970s-era F-14s and F-4s.",
-      "implication": "US/Israel can strike ANY target in Iran at will. Iran cannot prevent this. Every Iranian military facility, leadership compound, and infrastructure node is vulnerable from the air."
+      "implication": "US/Israel can strike ANY target in Iran at will. Iran cannot prevent this. Every Iranian military facility, leadership compound, and infrastructure node is vulnerable from the air.",
+      "limitation": "BUT: US has never forced Iranian capitulation through air power alone. Air superiority destroyed 7,800 targets in 26 days and Iran is STILL launching 3+ missile waves per day. Air power destroys infrastructure but does not break political will."
     },
     "intelligence_superiority": {
       "five_eyes": "US has Five Eyes intelligence network (US, UK, Australia, Canada, New Zealand) providing signals intelligence globally",
@@ -200,7 +255,7 @@
       "dollar_dominance": "US controls the global reserve currency. Can freeze any country's assets, cut off SWIFT access, impose secondary sanctions on anyone trading with Iran.",
       "sanctions_impact_on_iran": "Iran's GDP contracted ~6% under maximum pressure sanctions. Oil exports dropped from 2.5M bpd to <500K bpd. Currency lost 80% of value.",
       "iran_economic_weakness": "Iran's economy was already struggling pre-war: 40%+ inflation, 10%+ unemployment, brain drain, infrastructure decay from decades of sanctions",
-      "oil_weapon_cuts_both_ways": "While Hormuz closure hurts global markets, it also completely cuts off Iran's own oil export revenue — Iran earns $0 while Hormuz is closed"
+      "oil_weapon_is_one_sided": "CORRECTION: Hormuz closure does NOT cut Iran's own exports. Iran selectively allows its own tankers through to China (1.5M bpd, $180M+/day revenue). Iran also loads at Jask terminal bypassing Hormuz entirely. The closure hurts EVERYONE EXCEPT Iran."
     },
     "military_industrial_capacity": {
       "us_defense_budget": "$886 billion (2024) — more than the next 10 countries combined. Iran's defense budget: ~$10 billion.",
@@ -219,7 +274,7 @@
       "navy": "Iran's navy is coastal — fast boats and midget submarines. No blue-water capability. US Navy dominates open ocean.",
       "precision_munitions": "While Iran has improved accuracy, most Iranian missiles are still less precise than US/Israeli precision-guided munitions",
       "command_and_control": "Iranian C2 is vulnerable to US cyber and kinetic strikes. Multiple senior commanders already killed.",
-      "economic_fragility": "Iran cannot sustain prolonged conflict economically — GDP $400B vs US $28T. Sanctions already devastating.",
+      "economic_fragility": "Iran's GDP is $400B vs US $28T — but Iran is still earning $180M+/day from oil exports to China. Iran has experience operating under extreme sanctions since 2018. Economy is strained but NOT collapsing. The GDP comparison is misleading — Iran is fighting a $10B asymmetric war, not matching the US dollar for dollar.",
       "domestic_discontent": "Iranian population has shown willingness to protest (2019, 2022 Mahsa Amini protests). Prolonged war with 12,000+ civilian casualties could trigger internal unrest.",
       "brain_drain": "Iran has lost millions of educated citizens to emigration. Technical talent pool is shrinking."
     },
