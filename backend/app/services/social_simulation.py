@@ -72,7 +72,12 @@ class SocialSimulation:
             population: List of AgentPersona objects from population_generator
             situation_data: Current world state (escalation, oil price, events, etc.)
         """
-        self.population = {a.agent_id: a for a in population} if hasattr(population[0], 'agent_id') else {a['agent_id']: a for a in population}
+        if not population:
+            self.population = {}
+        elif hasattr(population[0], 'agent_id'):
+            self.population = {a.agent_id: a for a in population}
+        else:
+            self.population = {a['agent_id']: a for a in population}
         self.situation = situation_data
         self.forums: Dict[str, Forum] = {}
         self.social_graph: Dict[str, List[str]] = defaultdict(list)  # agent_id -> followed agent_ids

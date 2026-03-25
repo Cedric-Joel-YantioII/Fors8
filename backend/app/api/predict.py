@@ -85,7 +85,7 @@ def start_prediction():
             question=question,
             model_name=model_name,
             vllm_endpoint=vllm_endpoint,
-            num_runs=30,
+            num_runs=100,
             num_agents=3000,
             seed_documents=seed_documents,
         )

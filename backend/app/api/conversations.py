@@ -253,8 +253,8 @@ def add_message(conversation_id: str):
                     question=question_with_context,
                     model_name=model_name,
                     vllm_endpoint=vllm_endpoint,
-                    num_runs=10,
-                    num_agents=17,
+                    num_runs=100,
+                    num_agents=3000,
                 )
                 prediction_id = job.prediction_id
 

@@ -124,11 +124,51 @@
   },
 
   "iran_3_demands": {
-    "demand_1": "Recognition of Iran's legitimate rights (including nuclear program)",
-    "demand_2": "Payment of reparations for war damages — compensation for 12,000+ civilian casualties, destroyed infrastructure, nuclear facility damage, economic losses",
-    "demand_3": "Firm international guarantees against future aggression (backed by UNSC resolution)",
-    "ceasefire_position": "Iran rejects temporary ceasefire — demands permanent end to war with guarantees. Reparations are a non-negotiable precondition for any talks.",
-    "iran_leverage": "Iran holds Hormuz closure, submarine cable threat, GCC desalination vulnerability, and continued missile capability as leverage. Refuses to negotiate from weakness."
+    "demand_1": "Recognition of Iran's legitimate rights including nuclear program — Iran insists its enrichment activities are legal under NPT",
+    "demand_2": "Payment of reparations for war damages — compensation for 12,000+ civilian casualties, destroyed nuclear facilities, refineries, infrastructure. Iran has not publicly named a specific dollar figure but damage estimates exceed $50 billion",
+    "demand_3": "Firm international guarantees against future aggression — must be backed by UNSC resolution, not just US promises (which Iran considers worthless after JCPOA withdrawal)",
+    "additional_demands": {
+      "us_bases_withdrawal": "Iran demands departure of ALL US military bases from GCC states — Al Udeid (Qatar), Al Dhafra (UAE), Camp Arifjan (Kuwait), Prince Sultan Air Base (Saudi Arabia), Bahrain 5th Fleet HQ. Iran views US military presence as occupation enabling aggression.",
+      "sanctions_lifted": "Complete lifting of all US sanctions including on Iran's central bank (CBI), oil exports, SWIFT access. Iran sees sanctions as economic warfare that preceded military warfare.",
+      "central_bank_unfrozen": "Unfreezing of $100+ billion in Iranian assets frozen in foreign banks. Iran views US control of global financial system (SWIFT, dollar clearing) as weaponized infrastructure.",
+      "no_regime_change_guarantee": "Explicit guarantee that US/Israel will not pursue regime change in Iran — to be enshrined in international law",
+      "nuclear_rights_recognition": "International recognition of Iran's right to full nuclear fuel cycle including enrichment to any level for peaceful purposes"
+    },
+    "ceasefire_position": "Iran rejects temporary ceasefire — demands permanent end to war with guarantees. Reparations and US base withdrawal are non-negotiable preconditions for any talks. Hormuz stays closed until demands are met.",
+    "iran_leverage": "Iran holds: Hormuz closure (21M bpd), submarine cable threat (20% global internet), GCC desalination vulnerability (15-20M people at risk), continued missile capability, proxy network activation, and the demonstrated ability to strike Israeli command centers and US bases.",
+    "likelihood_of_acceptance": {
+      "reparations": "VERY LOW — no precedent for attacking side paying reparations while claiming victory. US paid nothing after Iraq War despite WMD being fabricated.",
+      "us_bases_withdrawal": "EXTREMELY LOW — would end US regional hegemony. US has never voluntarily withdrawn from strategic region under military pressure. Withdrawal would signal end of American military superiority in Middle East.",
+      "sanctions_lifted": "MODERATE — sanctions relief was traded before (JCPOA 2015). Most negotiable demand. But current US political climate makes it difficult.",
+      "overall_assessment": "Iran's maximalist demands are likely opening positions for negotiation. Historical precedent (Iran-Iraq War 1988) shows Iran eventually accepts less. But Mojtaba Khamenei's IRGC-aligned leadership may have higher threshold than his father."
+    }
+  },
+
+  "geopolitical_implications": {
+    "us_hegemony_challenged": {
+      "description": "This war demonstrates limits of US military superiority — air power alone cannot defeat Iran, and Iran's asymmetric capabilities (cheap drones vs expensive interceptors) have exposed a structural vulnerability",
+      "cost_asymmetry_proven": "Iran's $50K drones destroyed by $3M interceptors proves conventional military dominance can be negated by mass-produced cheap weapons",
+      "ground_invasion_impossible": "US 2003 DoD study: 500K troops, 10-20K US casualties for Iran ground invasion — politically impossible in any scenario",
+      "carrier_vulnerability": "Iranian anti-ship missiles and drone swarms threaten US carrier groups, challenging decades of naval power projection doctrine"
+    },
+    "petrodollar_implications": {
+      "description": "Iran's demand to free its central bank from US sanctions challenges the US-controlled global financial architecture",
+      "swift_weaponization": "US used SWIFT access as a weapon against Iran — other nations (China, Russia, India) are developing alternatives (CIPS, SPFS, UPI)",
+      "dollar_reserve_erosion": "War accelerates de-dollarization trend. China and Saudi Arabia already conduct some oil trade in yuan. War may push GCC states to diversify away from dollar dependency.",
+      "cbdc_implications": "US push for CBDC/tokenized finance could enable even more financial control. Iran's resistance is partly about preventing a future where US monitors/controls all global transactions."
+    },
+    "israel_sabotaging_peace": {
+      "description": "Israel has strategic interest in continuing the war to permanently degrade Iran's nuclear capability. Any ceasefire risks Iran rebuilding.",
+      "evidence": "Israel assassinated Khamenei on Day 1, killed Ali Larijani and IRGC commanders, struck nuclear facilities — all actions designed to make negotiation impossible",
+      "netanyahu_calculation": "Netanyahu's political survival depends on continued conflict. Peace would bring investigations, accountability. War provides political cover.",
+      "historical_pattern": "Israel has historically opposed US-Iran diplomatic engagement (opposed JCPOA, lobbied against Obama's outreach)"
+    },
+    "china_russia_alignment": {
+      "description": "War is accelerating a China-Russia-Iran strategic alignment against US hegemony",
+      "china_role": "Satellite intelligence (MizarVision), possible BeiDou missile guidance, diplomatic cover at UNSC",
+      "russia_role": "Arms transfers (S-300 already delivered, S-400 possible), intelligence sharing, UNSC veto power",
+      "multipolar_shift": "This war may be remembered as the moment US unipolar dominance ended — similar to Suez 1956 ending British Empire"
+    }
   },
 
   "nuclear_status": {

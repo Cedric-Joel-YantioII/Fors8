@@ -1,0 +1,124 @@
+{
+  "metadata": {
+    "description": "Historical base rates for war outcomes — used to calibrate simulation predictions",
+    "purpose": "Superforecasters' #1 tool. Without base rates, predictions are just guesses.",
+    "sources": ["Correlates of War Project", "Uppsala Conflict Data Program", "CSIS War Termination Study", "How the Weak Win Wars (Arreguin-Toft)", "RAND Corporation"]
+  },
+
+  "war_duration_statistics": {
+    "median_interstate_war_days": 90,
+    "mean_interstate_war_days": 540,
+    "wars_ending_under_30_days_pct": 26,
+    "wars_ending_under_90_days_pct": 51,
+    "wars_ending_under_1_year_pct": 75,
+    "wars_over_1_year_often_extend_to": "10+ years with sporadic clashes",
+    "air_only_campaign_median_days": 78,
+    "air_only_campaign_examples": {
+      "kosovo_1999": {"days": 78, "ended_by": "Russia abandoned Serbia, NATO air superiority"},
+      "desert_storm_air_1991": {"days": 42, "ended_by": "Air campaign achieved objectives, ground phase was 100 hours"},
+      "operation_allied_force": {"days": 78, "ended_by": "Diplomatic isolation + sustained bombing"}
+    }
+  },
+
+  "asymmetric_warfare_outcomes": {
+    "strong_actor_win_rate_1800_1849": 0.882,
+    "strong_actor_win_rate_1900_1949": 0.654,
+    "strong_actor_win_rate_1950_1999": 0.488,
+    "weak_actor_win_rate_post_1950": 0.512,
+    "source": "Arreguin-Toft, How the Weak Win Wars, Cambridge 2005",
+    "key_finding": "When weak side uses INDIRECT strategy (attrition, guerrilla, economic bleeding) against strong side using DIRECT strategy (conventional force), weak side wins majority of the time post-1950",
+    "iran_strategy_classification": "INDIRECT — asymmetric missile/drone attrition, proxy network, economic leverage via Hormuz, strategic patience",
+    "us_israel_strategy_classification": "DIRECT — conventional air strikes, precision munitions, technological superiority"
+  },
+
+  "war_termination_mechanisms": {
+    "clausewitz_three_reasons": {
+      "inability_to_continue": "Military defeat — forces destroyed or territory captured",
+      "improbability_of_victory": "Stalemate recognition — both sides realize they cannot win",
+      "unacceptable_cost": "Cost exceeds political objectives — domestic pressure forces end"
+    },
+    "most_common_ending_mechanism_pct": {
+      "negotiated_settlement": 31,
+      "decisive_military_victory": 28,
+      "stalemate_ceasefire": 23,
+      "unilateral_withdrawal": 12,
+      "third_party_intervention": 6
+    }
+  },
+
+  "closest_historical_analogues": {
+    "iran_iraq_war_1980_1988": {
+      "duration_years": 8,
+      "casualties": 500000,
+      "ended_by": "Iran concluded it faced unwinnable escalation after US Navy destroyed half its fleet (Operation Praying Mantis) + USS Vincennes shot down civilian airliner (290 dead). Iran interpreted as signal US would escalate without limit.",
+      "demands_outcome": "Iran demanded Iraq named 'aggressor' (enabling reparations) — REJECTED. Iran accepted 'poisoned chalice' ceasefire without reparations.",
+      "relevance": "Iran's current reparation demands mirror 1988 — likely maximalist opening position. But key difference: war is 25 days old not 8 years. Mojtaba Khamenei more hardline than his father."
+    },
+    "yom_kippur_war_1973": {
+      "duration_days": 19,
+      "ended_by": "Israeli counter-encirclement of Egyptian Third Army created mutual leverage. US-Soviet nuclear brinksmanship (DEFCON 3) forced superpower-imposed ceasefire.",
+      "oil_weapon": "OPEC embargo quadrupled oil prices, forced US to pressure Israel into concessions",
+      "relevance": "Israel's interceptor crisis mirrors 1973 tank losses. Oil weapon ($119/bbl) is even more potent today. Pattern: Israel's military reality forces political accommodation."
+    },
+    "suez_crisis_1956": {
+      "duration_days": 10,
+      "ended_by": "US economic coercion against its OWN ALLY (Britain). Eisenhower threatened to destroy pound sterling. Britain losing 100M pounds/week.",
+      "relevance": "Model for how GCC states could force US to negotiate by threatening US basing rights, oil production decisions, or dollar transactions. Qatar hosting CENTCOM HQ gives it direct leverage."
+    },
+    "vietnam_war": {
+      "us_combat_years": 8,
+      "us_casualties": 58000,
+      "ended_by": "Military stalemate + domestic political pressure. Nixon's Vietnamization. Paris Peace Accords gave face-saving exit.",
+      "relevance": "US domestic pressure threshold is far lower today. 45 US casualties in 25 days is approaching political sensitivity zone. Trump's '5-day pause' announcement = domestic/economic pressure already influencing decisions."
+    },
+    "falklands_war_1982": {
+      "duration_days": 74,
+      "ended_by": "Decisive British military victory — Argentine garrison surrendered",
+      "relevance": "Benchmark for modern air/naval conflict: 10 weeks. Current conflict (Day 25) is roughly 1/3 through typical duration. But Iran has no territory to 'surrender' and missile production regenerates the threat."
+    },
+    "kosovo_1999": {
+      "duration_days": 78,
+      "ended_by": "Russia abandoned Serbia diplomatically, enabling NATO to impose terms",
+      "relevance": "CRITICAL: Air campaigns alone take ~78 days when they work AND require target state's major ally to abandon them. China is doing OPPOSITE — providing intelligence to Iran. Without China abandoning Iran, air campaign alone cannot force capitulation."
+    }
+  },
+
+  "economic_pressure_effectiveness": {
+    "sanctions_against_large_ideological_states": "Historically INCREASES resistance rather than forcing capitulation",
+    "examples_of_sanctions_increasing_aggression": ["Fascist Italy", "Nazi Germany", "Imperial Japan", "North Korea", "Iran (1980-88)"],
+    "examples_of_sanctions_forcing_concessions": ["South Africa (decades)", "Yugoslavia 1921", "Libya 2003"],
+    "iran_specific": "Iran endured 8 years of war with Iraq under extreme economic strain. Current sanctions since 2018. IRGC-dominated leadership has eschatological worldview that deprioritizes economic suffering."
+  },
+
+  "ceasefire_durability": {
+    "minor_failure_within_10_days_pct": 34,
+    "major_failure_between_65_193_days_pct": 28,
+    "ceasefires_holding_1_year_pct": 50,
+    "key_factor": "Ceasefires with third-party enforcement (UN peacekeepers) are 2x more durable than those without"
+  },
+
+  "nuclear_threshold_dynamics": {
+    "key_finding": "Wars between nuclear/near-nuclear states end through exhaustion or political accommodation, not military victory. Subjugation is not a plausible outcome.",
+    "80_year_nuclear_firebreak": "No nuclear weapon has been used in combat since 1945. This norm is the strongest constraint on escalation.",
+    "iran_breakout_context": "Iran's breakout time was <1 week pre-war. Even with strikes on enrichment facilities, Fordow survived (80m underground). The nuclear dimension constrains all parties."
+  },
+
+  "applied_to_current_conflict": {
+    "base_rate_prediction": {
+      "war_ends_within_90_days": "51% (historical median for interstate wars)",
+      "war_ends_within_6_months": "75%",
+      "war_extends_beyond_1_year": "25% (but if it does, likely extends to 5-10 years)",
+      "negotiated_settlement": "31%",
+      "stalemate_frozen_conflict": "23%",
+      "decisive_victory_either_side": "28%",
+      "iran_wins_asymmetric": "51% if applying post-1950 asymmetric warfare rates"
+    },
+    "adjustment_factors": {
+      "nuclear_threshold_constrains_escalation": "+15% toward negotiated/frozen outcome",
+      "china_support_prevents_diplomatic_isolation": "-20% chance of Kosovo-style forced capitulation",
+      "israel_interceptor_crisis_accelerates_timeline": "-30 days from median duration",
+      "gcc_water_crisis_forces_third_party_pressure": "+10% toward faster resolution",
+      "iran_reparation_demands_delay_settlement": "+30 days as demands are negotiated down"
+    }
+  }
+}

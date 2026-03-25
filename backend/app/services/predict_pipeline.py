@@ -47,7 +47,7 @@ class PredictionJob:
     # Config
     model_name: str = "Qwen/Qwen2.5-72B-Instruct"
     num_agents: int = 3000
-    num_runs: int = 30
+    num_runs: int = 100
     rounds_per_run: int = 30
     num_gpus: int = 2
 
@@ -114,8 +114,8 @@ def _evict_old_jobs():
 def create_prediction(
     question: str,
     model_name: str = "Qwen/Qwen2.5-72B-Instruct",
-    num_agents: int = 100000,
-    num_runs: int = 10,
+    num_agents: int = 3000,
+    num_runs: int = 100,
     num_gpus: int = 2,
     vllm_endpoint: str = "",
     conversation_context: Optional[str] = None,
@@ -883,6 +883,16 @@ def _run_pipeline(job: PredictionJob, conversation_context: Optional[str] = None
             except Exception as e:
                 logger.warning("Failed to load strategic infrastructure data: %s", e)
 
+            # Load historical base rates for calibrated predictions
+            try:
+                base_rates_path = os.path.join(os.path.dirname(__file__), '../../data/iran_conflict/historical_base_rates.json')
+                if os.path.exists(base_rates_path):
+                    with open(base_rates_path, 'r') as f:
+                        initial_conditions["historical_base_rates"] = json.load(f)
+                    logger.info("Loaded historical base rates for calibration")
+            except Exception as e:
+                logger.warning("Failed to load historical base rates: %s", e)
+
             # If no scenario-specific data, use classifier defaults
             if not loaded_static:
                 if not initial_conditions and scenario_config:
@@ -1411,6 +1421,19 @@ Build on the previous analysis above. Note where this run's results confirm, ref
         except Exception:
             pass  # Non-fatal
 
+        # Fetch Polymarket odds for calibration
+        polymarket_context = ""
+        polymarket_odds = {}
+        try:
+            from .polymarket_client import fetch_relevant_markets, format_for_prompt
+            poly_markets = fetch_relevant_markets(job.question, max_results=5)
+            if poly_markets:
+                polymarket_context = format_for_prompt(poly_markets)
+                polymarket_odds = {m.question[:50]: m.outcomes for m in poly_markets}
+                logger.info("Polymarket: %d relevant markets found", len(poly_markets))
+        except Exception as e:
+            logger.warning("Polymarket fetch failed (non-fatal): %s", e)
+
         # Build social simulation context for the answer
         social_context = ""
         if social_sim:
@@ -1441,6 +1464,8 @@ SOCIAL SIMULATION ({pop_state['total_agents']} agents across {len(pop_state['for
 {actor_profiles_ctx}
 
 {market_context}
+
+{polymarket_context}
 
 SIMULATION RESULTS ({job.num_runs} parallel runs, {job.rounds_per_run} rounds each, {len(actors_data)} actors):
 - Outcome Probabilities: {json.dumps(prediction.outcome_probabilities)}
@@ -1538,6 +1563,22 @@ Be specific. Use numbers from the simulation data. Cite the real-world context w
                 job.answers = {"main_answer": f"Answer generation failed. Raw data is available above."}
         except Exception as e:
             job.answers = {"main_answer": f"Answer generation failed: {str(e)}. Raw simulation data is available above."}
+
+        # Save forecast for Brier score tracking
+        try:
+            from .brier_tracker import save_forecast
+            save_forecast(
+                prediction_id=job.prediction_id,
+                question=job.question,
+                probabilities=job.outcomes,
+                model_name=job.model_name,
+                num_agents=job.num_agents,
+                num_runs=job.num_runs,
+                grounding_score=grounding_report.grounding_score if 'grounding_report' in dir() else 0.0,
+                polymarket_odds=polymarket_odds if 'polymarket_odds' in dir() else None,
+            )
+        except Exception as e:
+            logger.warning("Brier forecast save failed (non-fatal): %s", e)
 
         # Step 9: Cleanup
         job.status = "complete"
