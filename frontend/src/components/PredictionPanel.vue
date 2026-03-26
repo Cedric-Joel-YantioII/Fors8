@@ -175,7 +175,7 @@
             <span class="dot-sep"></span>
             <span v-if="predictionData.num_agents">{{ predictionData.num_agents }} actors</span>
             <span class="dot-sep"></span>
-            <span v-if="predictionData.gpu_cost">${{ predictionData.gpu_cost.toFixed(2) }} GPU</span>
+            <span v-if="predictionData.gpu_cost">${{ Number(predictionData.gpu_cost || 0).toFixed(2) }} GPU</span>
             <template v-if="predictionData.scenario_type">
               <span class="dot-sep"></span>
               <span>{{ predictionData.scenario_type }}</span>
