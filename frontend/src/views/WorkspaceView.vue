@@ -301,9 +301,12 @@ const onConversationSelected = async (id) => {
           scenario_type: data.scenario_type,
         }
         currentStep.value = 5
-        if (data.graph_id) loadGraphForPrediction(data.graph_id)
-        // Switch to workbench view to show the PredictionPanel
-        viewMode.value = 'workbench'
+        if (data.graph_id) {
+          loadGraphForPrediction(data.graph_id)
+          viewMode.value = 'split'  // Show graph + prediction side by side
+        } else {
+          viewMode.value = 'workbench'
+        }
       } else if (data.status === 'failed' || data.status === 'error') {
         predictionStatus.value = 'error'
         errorMessage.value = data.error || 'Prediction failed.'
@@ -732,6 +735,9 @@ const fetchPrediction = async () => {
       if (data.graph_id) loadGraphForPrediction(data.graph_id)
       if (data.conversation_id) conversationId.value = data.conversation_id
       currentStep.value = 5
+      // Auto-switch to split view so both graph + prediction are visible
+      viewMode.value = 'split'
+      predictionStatus.value = 'complete'
       stopPredictionPolling()
     }
   } catch (e) { predictionFetchFailCount++; if (predictionFetchFailCount >= 5) { errorMessage.value = 'Network error.'; stopPredictionPolling() } }
