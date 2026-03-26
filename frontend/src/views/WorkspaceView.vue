@@ -784,7 +784,12 @@ onMounted(() => {
     viewMode.value = 'split'
     initProject()
   } else if (props.predictionId) {
-    startPredictionPolling()
+    // Fetch once immediately — if already complete, no need to poll
+    fetchPrediction().then(() => {
+      if (predictionStatus.value !== 'complete' && predictionStatus.value !== 'failed') {
+        startPredictionPolling()
+      }
+    })
   }
 })
 
