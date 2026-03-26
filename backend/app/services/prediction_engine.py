@@ -140,8 +140,11 @@ class PredictionEngine:
         escalations = [o.final_escalation for o in outcomes]
         result.avg_final_escalation = statistics.mean(escalations)
         result.max_escalation_reached = max(escalations)
+        # Nuclear escalation requires EXPLICIT nuclear weapon use — not just
+        # high escalation score. Escalation 9-10 = intense conventional war.
+        # 80-year nuclear firebreak (no use since 1945). Iran has ZERO warheads.
         result.nuclear_escalation_probability = sum(
-            1 for o in outcomes if o.final_escalation >= 9
+            1 for o in outcomes if o.termination_reason == "nuclear_weapon_used"
         ) / len(outcomes)
 
         # Economic stats
@@ -220,7 +223,8 @@ class PredictionEngine:
         }
 
         for outcome in outcomes:
-            if outcome.termination_reason == "nuclear_threshold_breached":
+            if outcome.termination_reason == "nuclear_weapon_used":
+                # Only count ACTUAL nuclear weapon use — not just high escalation
                 categories["nuclear_crisis"] += 1
             elif "actor_defeated" in outcome.termination_reason and "iran" in outcome.termination_reason.lower():
                 categories["us_israel_military_victory"] += 1

@@ -287,7 +287,7 @@ const sortedSentiments = computed(() => {
       if (v > 0.01) { cls = 'hawkish'; label = '+' + v.toFixed(3) }
       else if (v < -0.01) { cls = 'dovish'; label = v.toFixed(3) }
       else { label = v.toFixed(3) }
-      return { name: name.charAt(0).toUpperCase() + name.slice(1), val: v, cls, label }
+      return { name: formatLabel(name), val: v, cls, label }
     })
     .sort((a, b) => a.val - b.val)
 })
