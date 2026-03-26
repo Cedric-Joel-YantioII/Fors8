@@ -252,7 +252,7 @@ const props = defineProps({
   error: { type: String, default: '' },
   conversationId: { type: [String, Number], default: '' },
 })
-const emit = defineEmits(['retry', 'switch-tab'])
+const emit = defineEmits(['retry', 'switch-tab', 'conversation-created'])
 
 const hasData = computed(() => !!(props.predictionData?.answers?.main_answer || props.predictionData?.main_answer))
 const mainAnswer = computed(() => props.predictionData?.answers?.main_answer || props.predictionData?.main_answer || '')
@@ -341,8 +341,23 @@ const sendChatMessage = async () => {
   chatSending.value = true
   const aidx = chatMessages.value.length - 1
   try {
-    const convId = props.conversationId
-    if (!convId) { chatMessages.value[aidx].loading = false; chatMessages.value[aidx].content = 'No active conversation.'; chatSending.value = false; return }
+    let convId = props.conversationId
+    // Auto-create conversation if none exists (predictions from home page don't have one)
+    if (!convId) {
+      try {
+        const createResp = await fetch('/api/conversations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title: props.predictionData?.question || 'Follow-up' })
+        })
+        if (createResp.ok) {
+          const createData = await createResp.json()
+          convId = createData.id || createData.conversation_id
+          emit('conversation-created', convId)
+        }
+      } catch (e) { /* fallback below */ }
+    }
+    if (!convId) { chatMessages.value[aidx].loading = false; chatMessages.value[aidx].content = 'Could not create conversation.'; chatSending.value = false; return }
     const resp = await fetch(`/api/conversations/${convId}/messages`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content: text }) })
     if (!resp.ok) { chatMessages.value[aidx].loading = false; chatMessages.value[aidx].content = `Error: ${resp.status}`; chatSending.value = false; return }
     const data = await resp.json()

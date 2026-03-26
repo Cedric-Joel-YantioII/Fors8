@@ -123,6 +123,7 @@
             :conversationId="conversationId"
             @retry="retryPrediction"
             @switch-tab="(tab) => viewMode = tab"
+            @conversation-created="(id) => conversationId = id"
           />
           <SettingsPanel v-else-if="viewMode === 'settings'" key="settings" />
           <ChatHistoryPanel v-else-if="viewMode === 'chat-history'" key="chat-history" @conversation-selected="onConversationSelected" />
