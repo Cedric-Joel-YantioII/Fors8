@@ -1,7 +1,7 @@
 <template>
   <div class="pred-panel">
-    <!-- Loading -->
-    <div v-if="loading" class="state-overlay">
+    <!-- Loading (only show if we DON'T have data yet) -->
+    <div v-if="loading && !hasData" class="state-overlay">
       <div class="loader-wrap">
         <div class="loader-ring"></div>
         <p class="loader-text">{{ loadingStage || 'Running prediction...' }}</p>
@@ -254,6 +254,7 @@ const props = defineProps({
 })
 const emit = defineEmits(['retry', 'switch-tab'])
 
+const hasData = computed(() => !!(props.predictionData?.answers?.main_answer || props.predictionData?.main_answer))
 const mainAnswer = computed(() => props.predictionData?.answers?.main_answer || props.predictionData?.main_answer || '')
 const hasOutcomes = computed(() => props.predictionData?.outcomes && Object.keys(props.predictionData.outcomes).length > 0)
 const hasActors = computed(() => props.predictionData?.actor_results && Object.keys(props.predictionData.actor_results).length > 0)
