@@ -291,6 +291,33 @@ class Database:
     # Predictions
     # ------------------------------------------------------------------
 
+    def list_predictions(self, limit: int = 50) -> List[Dict[str, Any]]:
+        """Return all predictions, newest first."""
+        cur = self._cursor()
+        if cur is None:
+            return []
+        try:
+            cur.execute(
+                """SELECT id, question, status, created_at, completed_at,
+                          model_name, num_runs, num_agents, grounding_score, scenario_type
+                   FROM predictions
+                   ORDER BY created_at DESC
+                   LIMIT %s""",
+                (limit,),
+            )
+            rows = cur.fetchall()
+            result = []
+            for row in rows:
+                d = dict(row)
+                d['prediction_id'] = d.pop('id')
+                d['created_at'] = d['created_at'].isoformat() if d.get('created_at') else None
+                d['completed_at'] = d['completed_at'].isoformat() if d.get('completed_at') else None
+                result.append(d)
+            return result
+        except Exception as exc:
+            logger.error("list_predictions failed: %s", exc)
+            return []
+
     def save_prediction(self, prediction_data: Dict[str, Any]) -> Optional[str]:
         """Persist a prediction dict (upsert). Returns prediction_id."""
         cur = self._cursor()

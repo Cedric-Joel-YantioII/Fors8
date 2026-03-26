@@ -121,7 +121,52 @@
               </span>
               <h2>Social Simulation</h2>
             </div>
-            <div class="answer-body" v-html="formatAnswer(typeof predictionData.social_results === 'string' ? predictionData.social_results : JSON.stringify(predictionData.social_results, null, 2))"></div>
+
+            <!-- String fallback -->
+            <div v-if="typeof predictionData.social_results === 'string'" class="answer-body" v-html="formatAnswer(predictionData.social_results)"></div>
+
+            <!-- Structured data -->
+            <div v-else class="social-cards">
+              <!-- Pressure gauges -->
+              <div v-if="socialEscalation != null || socialDeescalation != null" class="pressure-row">
+                <div v-if="socialEscalation != null" class="pressure-card escalation">
+                  <div class="pressure-label">Escalation Pressure</div>
+                  <div class="pressure-bar-wrap">
+                    <div class="pressure-bar esc-bar" :style="{ width: (socialEscalation * 100) + '%' }"></div>
+                  </div>
+                  <div class="pressure-val mono">{{ (socialEscalation * 100).toFixed(1) }}%</div>
+                </div>
+                <div v-if="socialDeescalation != null" class="pressure-card deescalation">
+                  <div class="pressure-label">De-escalation Pressure</div>
+                  <div class="pressure-bar-wrap">
+                    <div class="pressure-bar deesc-bar" :style="{ width: (socialDeescalation * 100) + '%' }"></div>
+                  </div>
+                  <div class="pressure-val mono">{{ (socialDeescalation * 100).toFixed(1) }}%</div>
+                </div>
+              </div>
+
+              <!-- Country sentiments -->
+              <div v-if="sortedSentiments.length > 0" class="sentiments-block">
+                <h3 class="sub-heading mono">Country Sentiments</h3>
+                <div class="sentiment-list">
+                  <div v-for="s in sortedSentiments" :key="s.name" class="sentiment-row">
+                    <span class="sentiment-name">{{ s.name }}</span>
+                    <span class="sentiment-badge mono" :class="s.cls">{{ s.label }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Final round summary (if present) -->
+              <div v-if="socialFinalRound" class="final-round-block">
+                <h3 class="sub-heading mono">Final Round</h3>
+                <div class="final-round-grid">
+                  <div v-for="(val, key) in socialFinalRound" :key="key" class="fr-item">
+                    <span class="fr-key">{{ formatLabel(key) }}</span>
+                    <span class="fr-val mono">{{ typeof val === 'number' ? val.toFixed(3) : val }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </section>
 
           <!-- Run Info -->
@@ -219,6 +264,36 @@ const groundingColor = computed(() => {
   if (s >= 0.7) return 'high'
   if (s >= 0.4) return 'mid'
   return 'low'
+})
+const socialEscalation = computed(() => {
+  const sr = props.predictionData?.social_results
+  if (!sr || typeof sr === 'string') return null
+  return sr.escalation_pressure ?? null
+})
+const socialDeescalation = computed(() => {
+  const sr = props.predictionData?.social_results
+  if (!sr || typeof sr === 'string') return null
+  return sr.deescalation_pressure ?? null
+})
+const sortedSentiments = computed(() => {
+  const sr = props.predictionData?.social_results
+  if (!sr || typeof sr === 'string' || !sr.country_sentiments) return []
+  return Object.entries(sr.country_sentiments)
+    .map(([name, val]) => {
+      const v = Number(val)
+      let cls = 'neutral'
+      let label = v.toFixed(3)
+      if (v > 0.01) { cls = 'hawkish'; label = '+' + v.toFixed(3) }
+      else if (v < -0.01) { cls = 'dovish'; label = v.toFixed(3) }
+      else { label = v.toFixed(3) }
+      return { name: name.charAt(0).toUpperCase() + name.slice(1), val: v, cls, label }
+    })
+    .sort((a, b) => a.val - b.val)
+})
+const socialFinalRound = computed(() => {
+  const sr = props.predictionData?.social_results
+  if (!sr || typeof sr === 'string' || !sr.final_round) return null
+  return sr.final_round
 })
 const canSend = computed(() => chatInput.value.trim() !== '')
 
@@ -409,6 +484,35 @@ watch(() => props.predictionData?.prediction_id, () => { chatMessages.value = []
 .grounding-val.mid { color: var(--c-amber); }
 .grounding-val.low { color: var(--c-red); }
 .grounding-report { font-size: 13px; line-height: 1.6; color: var(--c-text-2); }
+
+/* Social simulation */
+.social-cards { display: flex; flex-direction: column; gap: 18px; }
+.pressure-row { display: flex; gap: 12px; }
+.pressure-card { flex: 1; background: var(--c-surface-2); border-radius: 8px; padding: 14px 16px; }
+.pressure-label { font-size: 12px; font-weight: 500; color: var(--c-text-muted); margin-bottom: 8px; }
+.pressure-bar-wrap { height: 8px; background: var(--c-border); border-radius: 4px; overflow: hidden; margin-bottom: 6px; }
+.pressure-bar { height: 100%; border-radius: 4px; transition: width 0.6s ease; min-width: 2px; }
+.esc-bar { background: var(--c-red); }
+.deesc-bar { background: var(--c-green); }
+.pressure-val { font-size: 18px; font-weight: 600; }
+.pressure-card.escalation .pressure-val { color: var(--c-red); }
+.pressure-card.deescalation .pressure-val { color: var(--c-green); }
+
+.sub-heading { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: var(--c-text-muted); margin-bottom: 10px; }
+
+.sentiment-list { display: flex; flex-direction: column; gap: 6px; }
+.sentiment-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 12px; background: var(--c-surface-2); border-radius: 6px; }
+.sentiment-name { font-size: 13px; font-weight: 500; }
+.sentiment-badge { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 4px; }
+.sentiment-badge.hawkish { color: var(--c-red); background: #fef2f2; }
+.sentiment-badge.dovish { color: var(--c-green); background: #f0fdf4; }
+.sentiment-badge.neutral { color: var(--c-text-muted); background: var(--c-surface); }
+
+.final-round-block { border-top: 1px solid var(--c-border); padding-top: 14px; }
+.final-round-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.fr-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; background: var(--c-surface-2); border-radius: 6px; font-size: 13px; }
+.fr-key { color: var(--c-text-2); }
+.fr-val { font-size: 12px; color: var(--c-text); font-weight: 500; }
 
 /* Run footer */
 .run-footer { display: flex; align-items: center; gap: 10px; padding-top: 20px; margin-top: 8px; font-size: 11px; color: var(--c-text-muted); border-top: 1px solid var(--c-surface-2); }

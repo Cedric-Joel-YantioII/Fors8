@@ -346,27 +346,38 @@ const renderGraph = () => {
   
   const nodesData = props.graphData.nodes || []
   const edgesData = props.graphData.edges || []
-  
+
+  console.log(`[GraphPanel] renderGraph: ${nodesData.length} nodes, ${edgesData.length} edges from API`)
+
   if (nodesData.length === 0) return
 
   // Prep data
   const nodeMap = {}
   nodesData.forEach(n => nodeMap[n.uuid] = n)
-  
+
   const nodes = nodesData.map(n => ({
     id: n.uuid,
     name: n.name || 'Unnamed',
     type: n.labels?.find(l => l !== 'Entity') || 'Entity',
     rawData: n
   }))
-  
+
   const nodeIds = new Set(nodes.map(n => n.id))
-  
+
   // 处理边数据，计算同一对节点间的边数量和索引
   const edgePairCount = {}
   const selfLoopEdges = {} // 按节点分组的自环边
   const tempEdges = edgesData
-    .filter(e => nodeIds.has(e.source_node_uuid) && nodeIds.has(e.target_node_uuid))
+    .filter(e => {
+      const srcOk = nodeIds.has(e.source_node_uuid)
+      const tgtOk = nodeIds.has(e.target_node_uuid)
+      if (!srcOk || !tgtOk) {
+        console.warn(`[GraphPanel] Edge filtered out: source=${e.source_node_uuid} (${srcOk ? 'ok' : 'MISSING'}), target=${e.target_node_uuid} (${tgtOk ? 'ok' : 'MISSING'})`)
+      }
+      return srcOk && tgtOk
+    })
+
+  console.log(`[GraphPanel] After filtering: ${tempEdges.length} edges matched to nodes`)
   
   // 统计每对节点之间的边数量，收集自环边
   tempEdges.forEach(e => {

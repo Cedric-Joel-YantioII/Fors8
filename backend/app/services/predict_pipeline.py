@@ -47,7 +47,7 @@ class PredictionJob:
     # Config
     model_name: str = "Qwen/Qwen2.5-72B-Instruct"
     num_agents: int = 3000
-    num_runs: int = 100
+    num_runs: int = 20
     rounds_per_run: int = 30
     num_gpus: int = 2
 
@@ -127,7 +127,7 @@ def create_prediction(
     question: str,
     model_name: str = "Qwen/Qwen2.5-72B-Instruct",
     num_agents: int = 3000,
-    num_runs: int = 100,
+    num_runs: Optional[int] = None,
     num_gpus: int = 2,
     vllm_endpoint: str = "",
     conversation_context: Optional[str] = None,
@@ -144,6 +144,18 @@ def create_prediction(
         seed_documents: List of uploaded file dicts with keys 'name' and 'content',
             carried into the pipeline for graph ingestion alongside scraped data.
     """
+
+    # Smart default for num_runs based on model size if caller didn't specify
+    if num_runs is None:
+        model_lower = model_name.lower()
+        if "14b" in model_lower:
+            num_runs = 30   # fast model — more runs feasible
+        elif "32b" in model_lower:
+            num_runs = 20   # medium model
+        elif "72b" in model_lower:
+            num_runs = 10   # slow model — fewer runs to stay under ~1 hr
+        else:
+            num_runs = 20   # sensible default
 
     job = PredictionJob(
         prediction_id=f"pred_{uuid.uuid4().hex[:12]}",

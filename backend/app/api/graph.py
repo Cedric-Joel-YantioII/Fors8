@@ -583,10 +583,14 @@ def get_graph_data(graph_id: str):
                 "success": False,
                 "error": "ZEP_API_KEY未配置"
             }), 500
-        
+
         builder = GraphBuilderService(api_key=Config.ZEP_API_KEY)
         graph_data = builder.get_graph_data(graph_id)
-        
+
+        node_count = graph_data.get("node_count", 0)
+        edge_count = graph_data.get("edge_count", 0)
+        logger.info(f"Graph data for {graph_id}: {node_count} nodes, {edge_count} edges")
+
         return jsonify({
             "success": True,
             "data": graph_data

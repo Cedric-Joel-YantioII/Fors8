@@ -301,7 +301,7 @@ const onConversationSelected = async (id) => {
           scenario_type: data.scenario_type,
         }
         currentStep.value = 5
-        if (data.graph_id && !graphData.value) loadGraphForPrediction(data.graph_id)
+        if (data.graph_id) loadGraphForPrediction(data.graph_id)
         // Switch to workbench view to show the PredictionPanel
         viewMode.value = 'workbench'
       } else if (data.status === 'failed' || data.status === 'error') {
@@ -330,7 +330,7 @@ const onConversationSelected = async (id) => {
             if (d.status === 'failed') { errorMessage.value = d.error || 'Failed.'; stopPredictionPolling() }
             if (d.status === 'complete') {
               predictionData.value = { question: d.question, prediction_id: d.prediction_id, outcomes: d.outcomes || {}, actor_results: d.actor_results || {}, answers: d.answers || {}, gpu_cost: d.gpu_cost || 0, num_runs: d.num_runs || 0, num_agents: d.num_agents || 0, graph_id: d.graph_id || '', grounding_score: d.grounding_score, grounding_report: d.grounding_report, social_results: d.social_results, agent_decisions: d.agent_decisions, scenario_type: d.scenario_type }
-              if (d.graph_id && !graphData.value) loadGraphForPrediction(d.graph_id)
+              if (d.graph_id) loadGraphForPrediction(d.graph_id)
               if (d.conversation_id) conversationId.value = d.conversation_id
               currentStep.value = 5
               stopPredictionPolling()
@@ -716,12 +716,20 @@ const fetchPrediction = async () => {
     else if (data.status === 'simulating' || data.status === 'running') currentStep.value = 3
     else if (data.status === 'aggregating' || data.status === 'answering') currentStep.value = 4
     // Auto-load graph when graph_id becomes available (even before completion)
-    if (data.graph_id && !graphData.value) {
-      loadGraphForPrediction(data.graph_id)
+    // Periodically refresh graph data while prediction is in progress so edges
+    // appear as Zep finishes processing episodes (edges are often not ready on
+    // the first fetch right after the graph_id appears).
+    if (data.graph_id) {
+      const hasEdges = graphData.value?.edges?.length > 0
+      if (!graphData.value || !hasEdges) {
+        loadGraphForPrediction(data.graph_id)
+      }
     }
     if (data.status === 'complete') {
       predictionData.value = { question: data.question, prediction_id: data.prediction_id, outcomes: data.outcomes || {}, actor_results: data.actor_results || {}, answers: data.answers || {}, gpu_cost: data.gpu_cost || 0, num_runs: data.num_runs || 0, num_agents: data.num_agents || 0, graph_id: data.graph_id || '', grounding_score: data.grounding_score, grounding_report: data.grounding_report, social_results: data.social_results, agent_decisions: data.agent_decisions, scenario_type: data.scenario_type }
-      if (data.graph_id && !graphData.value) loadGraphForPrediction(data.graph_id)
+      // Always reload graph data on completion — Zep may have finished
+      // processing edges since the initial fetch during building_graph status.
+      if (data.graph_id) loadGraphForPrediction(data.graph_id)
       if (data.conversation_id) conversationId.value = data.conversation_id
       currentStep.value = 5
       stopPredictionPolling()
@@ -732,11 +740,33 @@ const fetchPrediction = async () => {
 const startPredictionPolling = () => { if (!props.predictionId) return; stopPredictionPolling(); fetchPrediction(); predictionPollTimer = setInterval(fetchPrediction, 2000) }
 const stopPredictionPolling = () => { if (predictionPollTimer) { clearInterval(predictionPollTimer); predictionPollTimer = null } }
 
-const loadGraphForPrediction = async (graphId) => {
+let _graphFetchInFlight = false
+let _graphRetryTimer = null
+const loadGraphForPrediction = async (graphId, retryCount = 0) => {
+  // Prevent overlapping fetches from rapid polling
+  if (_graphFetchInFlight) return
+  _graphFetchInFlight = true
   graphLoading.value = true
-  try { const res = await getGraphData(graphId); if (res.success) { graphData.value = res.data; currentPhase.value = 2 } }
-  catch (err) { console.error('Graph load failed:', err) }
-  finally { graphLoading.value = false }
+  try {
+    const res = await getGraphData(graphId)
+    if (res.success) {
+      graphData.value = res.data
+      currentPhase.value = 2
+      const nc = res.data.node_count || res.data.nodes?.length || 0
+      const ec = res.data.edge_count || res.data.edges?.length || 0
+      console.log(`[Prediction] Graph loaded: ${nc} nodes, ${ec} edges (graph_id=${graphId})`)
+
+      // If we got nodes but zero edges, Zep is likely still processing.
+      // Schedule a retry (up to 5 retries, backing off 3s → 6s → 12s → 24s → 48s).
+      if (nc > 0 && ec === 0 && retryCount < 5) {
+        const delay = 3000 * Math.pow(2, retryCount)
+        console.log(`[Prediction] Nodes present but no edges — retrying in ${delay/1000}s (attempt ${retryCount + 1}/5)`)
+        if (_graphRetryTimer) clearTimeout(_graphRetryTimer)
+        _graphRetryTimer = setTimeout(() => loadGraphForPrediction(graphId, retryCount + 1), delay)
+      }
+    }
+  } catch (err) { console.error('Graph load failed:', err) }
+  finally { graphLoading.value = false; _graphFetchInFlight = false }
 }
 
 // ═══════════════════════════════════════════════
@@ -756,6 +786,7 @@ onUnmounted(() => {
   stopPredictionPolling()
   stopGraphBuildPolling()
   stopGraphDataPolling()
+  if (_graphRetryTimer) { clearTimeout(_graphRetryTimer); _graphRetryTimer = null }
 })
 
 // Watch prediction changes

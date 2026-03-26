@@ -90,7 +90,6 @@ def start_prediction():
             question=question,
             model_name=model_name,
             vllm_endpoint=vllm_endpoint,
-            num_runs=100,
             num_agents=3000,
             seed_documents=seed_documents,
         )
@@ -104,6 +103,18 @@ def start_prediction():
     except Exception as e:
         logger.error(f"Prediction start failed: {e}\n{traceback.format_exc()}")
         return jsonify({"error": str(e)}), 500
+
+
+@predict_bp.route('', methods=['GET'])
+def list_predictions():
+    """List all predictions (for the history sidebar)."""
+    try:
+        from ..services.database import get_db
+        predictions = get_db().list_predictions()
+        return jsonify(predictions)
+    except Exception as e:
+        logger.error(f"Failed to list predictions: {e}")
+        return jsonify([])
 
 
 @predict_bp.route('/<prediction_id>', methods=['GET'])

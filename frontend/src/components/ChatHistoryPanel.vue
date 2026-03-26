@@ -6,22 +6,25 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         New Simulation
       </button>
+      <div class="sidebar-label mono">Previous Simulations</div>
       <div class="conv-list">
         <div
           v-for="conv in conversations"
           :key="conv.id"
           class="conv-item"
-          :class="{ active: conv.id === activeConversationId }"
           @click="selectConversation(conv.id)"
         >
           <div class="conv-title">{{ conv.title || 'Untitled' }}</div>
           <div class="conv-meta mono">
             <span>{{ formatDate(conv.updated_at || conv.created_at) }}</span>
-            <span v-if="conv.num_agents">{{ conv.num_agents }} agents</span>
+            <span v-if="conv.status" class="status-badge" :class="'status-' + conv.status">{{ conv.status }}</span>
+          </div>
+          <div class="conv-meta mono" v-if="conv.num_runs || conv.grounding != null">
+            <span v-if="conv.num_runs">{{ conv.num_runs }} runs</span>
             <span v-if="conv.grounding != null">Grounding: {{ (conv.grounding * 100).toFixed(0) }}%</span>
           </div>
         </div>
-        <div v-if="conversations.length === 0 && !sidebarLoading" class="conv-empty">No simulations yet</div>
+        <div v-if="conversations.length === 0 && !sidebarLoading" class="conv-empty">No simulations yet. Run a prediction from the home page.</div>
         <div v-if="sidebarLoading" class="conv-loading"><div class="dots"><span></span><span></span><span></span></div></div>
       </div>
     </aside>
@@ -119,7 +122,9 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { useRouter } from 'vue-router'
 
+const router = useRouter()
 const emit = defineEmits(['conversation-selected'])
 
 const conversations = ref([])
@@ -135,9 +140,36 @@ const msgScrollEl = ref(null)
 let pollTimers = {}
 const canSend = computed(() => query.value.trim() !== '')
 
-const loadConversations = async () => { sidebarLoading.value = true; try { const r = await fetch('/api/conversations'); if (r.ok) conversations.value = await r.json() } catch (e) { console.error(e) } finally { sidebarLoading.value = false } }
-const createConversation = async () => { stopAllPolling(); activeConversationId.value = null; messages.value = []; try { const r = await fetch('/api/conversations', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: 'New Simulation' }) }); if (r.ok) { const c = await r.json(); conversations.value.unshift(c); activeConversationId.value = c.id; emit('conversation-selected', c.id); await nextTick(); textareaRef.value?.focus() } } catch (e) { console.error(e) } }
-const selectConversation = (id) => { if (id === activeConversationId.value) return; stopAllPolling(); activeConversationId.value = id; emit('conversation-selected', id); loadConversation(id) }
+const loadConversations = async () => {
+  sidebarLoading.value = true
+  try {
+    // Load predictions directly (they exist even without a conversation)
+    const r = await fetch('/api/predict')
+    if (r.ok) {
+      const preds = await r.json()
+      conversations.value = preds.map(p => ({
+        id: p.prediction_id,
+        title: p.question || 'Untitled',
+        created_at: p.created_at,
+        updated_at: p.completed_at || p.created_at,
+        status: p.status,
+        num_agents: p.num_agents,
+        grounding: p.grounding_score,
+        prediction_id: p.prediction_id,
+        scenario_type: p.scenario_type,
+        model_name: p.model_name,
+        num_runs: p.num_runs,
+      }))
+    }
+  } catch (e) { console.error(e) } finally { sidebarLoading.value = false }
+}
+const createConversation = () => { router.push('/') }
+const selectConversation = (id) => {
+  const conv = conversations.value.find(c => c.id === id)
+  if (conv && conv.prediction_id) {
+    router.push(`/predict/${conv.prediction_id}`)
+  }
+}
 const loadConversation = async (id) => { if (!id) return; messagesLoading.value = true; try { const r = await fetch(`/api/conversations/${id}`); if (r.ok) { const d = await r.json(); messages.value = d.messages || []; messages.value.forEach((m, i) => { if (m.role === 'assistant' && (m.status === 'pending' || m.status === 'running') && m.prediction_id) startPolling(m.prediction_id, i) }); await nextTick(); scrollToBottom() } } catch (e) { console.error(e) } finally { messagesLoading.value = false } }
 
 const sendMessage = async () => {
@@ -219,6 +251,11 @@ onUnmounted(() => stopAllPolling())
 .conv-item.active { background: var(--c-surface-2); border-left: 2px solid var(--c-accent); }
 .conv-title { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .conv-meta { font-size: 11px; color: var(--c-text-muted); margin-top: 2px; display: flex; gap: 8px; flex-wrap: wrap; }
+.sidebar-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--c-text-muted); padding: 4px 20px 6px; }
+.status-badge { font-size: 10px; padding: 1px 6px; border-radius: 3px; background: var(--c-surface-2); color: var(--c-text-muted); text-transform: capitalize; }
+.status-complete { background: #dcfce7; color: #166534; }
+.status-failed { background: #fee2e2; color: #991b1b; }
+.status-running, .status-simulating, .status-aggregating, .status-answering { background: #fef3c7; color: #92400e; }
 .conv-empty { padding: 24px 12px; font-size: 13px; color: var(--c-text-muted); text-align: center; }
 .conv-loading { padding: 24px; display: flex; justify-content: center; }
 
