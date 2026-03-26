@@ -28,9 +28,17 @@ class Config:
     JSON_AS_ASCII = False
     
     # LLM配置（统一使用OpenAI格式）
-    LLM_API_KEY = os.environ.get('LLM_API_KEY')
-    LLM_BASE_URL = os.environ.get('LLM_BASE_URL', 'https://api.openai.com/v1')
-    LLM_MODEL_NAME = os.environ.get('LLM_MODEL_NAME', 'gpt-4o-mini')
+    # If VLLM_ENDPOINT is set, use the GPU for ALL LLM calls (graph building,
+    # ontology generation, profile generation) instead of rate-limited free tier
+    _vllm_ep = os.environ.get('VLLM_ENDPOINT', '')
+    if _vllm_ep:
+        LLM_API_KEY = 'not-needed'
+        LLM_BASE_URL = f"{_vllm_ep}/v1" if "/v1" not in _vllm_ep else _vllm_ep
+        LLM_MODEL_NAME = os.environ.get('VLLM_MODEL', 'qwen2.5:32b')
+    else:
+        LLM_API_KEY = os.environ.get('LLM_API_KEY')
+        LLM_BASE_URL = os.environ.get('LLM_BASE_URL', 'https://api.openai.com/v1')
+        LLM_MODEL_NAME = os.environ.get('LLM_MODEL_NAME', 'gpt-4o-mini')
     
     # Zep配置
     ZEP_API_KEY = os.environ.get('ZEP_API_KEY')

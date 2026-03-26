@@ -30,7 +30,12 @@ def start_prediction():
     The pipeline runs in the background — poll GET /api/predict/:id for progress.
     """
     try:
-        question = request.form.get('question', '').strip()
+        # Handle both JSON and form data (frontend sends JSON for text-only, form for file uploads)
+        if request.is_json:
+            data = request.get_json()
+            question = (data.get('question', '') or '').strip()
+        else:
+            question = (request.form.get('question', '') or '').strip()
 
         if not question:
             return jsonify({"error": "No question provided"}), 400

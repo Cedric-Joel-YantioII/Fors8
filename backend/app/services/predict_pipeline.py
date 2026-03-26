@@ -337,9 +337,18 @@ def _generate_initial_conditions_from_graph(
             question=question,
         )
 
-        client = OpenAI(api_key=Config.LLM_API_KEY, base_url=Config.LLM_BASE_URL)
+        # Use vLLM endpoint if available (avoids rate-limited free tier)
+        vllm_ep = os.environ.get("VLLM_ENDPOINT", "")
+        vllm_model = os.environ.get("VLLM_MODEL", "")
+        if vllm_ep:
+            api_base = f"{vllm_ep}/v1" if "/v1" not in vllm_ep else vllm_ep
+            client = OpenAI(api_key="not-needed", base_url=api_base)
+            model_name = vllm_model or "qwen2.5:32b"
+        else:
+            client = OpenAI(api_key=Config.LLM_API_KEY, base_url=Config.LLM_BASE_URL)
+            model_name = Config.LLM_MODEL_NAME
         response = client.chat.completions.create(
-            model=Config.LLM_MODEL_NAME,
+            model=model_name,
             messages=[
                 {"role": "system", "content": prompt},
                 {"role": "user", "content": f"Generate initial conditions for: {question}"},
@@ -884,26 +893,19 @@ def _run_pipeline(job: PredictionJob, conversation_context: Optional[str] = None
                     loaded_static = True
                     logger.info("Using static data from %s", static_dir)
 
-            # Enrich initial_conditions with strategic infrastructure data
-            try:
-                infra_path = os.path.join(os.path.dirname(__file__), '../../data/iran_conflict/strategic_infrastructure.json')
-                if os.path.exists(infra_path):
-                    with open(infra_path, 'r') as f:
-                        infra_data = json.load(f)
-                    initial_conditions["strategic_infrastructure"] = infra_data
-                    logger.info("Loaded strategic infrastructure data")
-            except Exception as e:
-                logger.warning("Failed to load strategic infrastructure data: %s", e)
-
-            # Load historical base rates for calibrated predictions
-            try:
-                base_rates_path = os.path.join(os.path.dirname(__file__), '../../data/iran_conflict/historical_base_rates.json')
-                if os.path.exists(base_rates_path):
-                    with open(base_rates_path, 'r') as f:
-                        initial_conditions["historical_base_rates"] = json.load(f)
-                    logger.info("Loaded historical base rates for calibration")
-            except Exception as e:
-                logger.warning("Failed to load historical base rates: %s", e)
+            # If scenario classifier didn't find a dir, try iran_conflict directly
+            # (this is our primary dataset — don't lose it because of keyword matching)
+            if not loaded_static:
+                data_dir = os.path.join(os.path.dirname(__file__), '../../data/iran_conflict')
+                actors_path = os.path.join(data_dir, 'actors.json')
+                conditions_path = os.path.join(data_dir, 'initial_conditions.json')
+                if os.path.exists(actors_path) and os.path.exists(conditions_path):
+                    with open(actors_path, 'r') as f:
+                        actors_data = json.load(f)
+                    with open(conditions_path, 'r') as f:
+                        initial_conditions = json.load(f)
+                    loaded_static = True
+                    logger.info("Loaded iran_conflict static data as fallback")
 
             # If no scenario-specific data, use classifier defaults
             if not loaded_static:
@@ -925,6 +927,32 @@ def _run_pipeline(job: PredictionJob, conversation_context: Optional[str] = None
                     actors_data = []
             job.progress_pct = 45
             _persist_job(job)
+
+        # ALWAYS enrich initial_conditions with supplementary data files
+        # (runs whether actors came from graph or from static fallback)
+        if initial_conditions is None:
+            initial_conditions = {}
+        try:
+            infra_path = os.path.join(os.path.dirname(__file__), '../../data/iran_conflict/strategic_infrastructure.json')
+            if os.path.exists(infra_path):
+                with open(infra_path, 'r') as f:
+                    initial_conditions["strategic_infrastructure"] = json.load(f)
+                logger.info("Loaded strategic infrastructure data")
+        except Exception as e:
+            logger.warning("Failed to load strategic infrastructure data: %s", e)
+
+        try:
+            base_rates_path = os.path.join(os.path.dirname(__file__), '../../data/iran_conflict/historical_base_rates.json')
+            if os.path.exists(base_rates_path):
+                with open(base_rates_path, 'r') as f:
+                    initial_conditions["historical_base_rates"] = json.load(f)
+                logger.info("Loaded historical base rates for calibration")
+        except Exception as e:
+            logger.warning("Failed to load historical base rates: %s", e)
+
+        logger.info("Initial conditions loaded: escalation=%s, oil=$%s, phase=%s, hormuz=%s",
+                     initial_conditions.get("escalation_level"), initial_conditions.get("oil_price"),
+                     initial_conditions.get("phase"), initial_conditions.get("strait_of_hormuz_open"))
 
         # Import world_state / consequence_engine (needed for simulation)
         from .world_state import ActorState, ActorTier, WorldState, ActionType, ActionDomain, ACTION_DOMAIN_MAP, GeopoliticalEvent
