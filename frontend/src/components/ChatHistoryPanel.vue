@@ -4,7 +4,7 @@
     <aside class="ch-sidebar">
       <button class="new-btn" @click="createConversation">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        New Chat
+        New Simulation
       </button>
       <div class="conv-list">
         <div
@@ -15,9 +15,13 @@
           @click="selectConversation(conv.id)"
         >
           <div class="conv-title">{{ conv.title || 'Untitled' }}</div>
-          <div class="conv-date mono">{{ formatDate(conv.updated_at || conv.created_at) }}</div>
+          <div class="conv-meta mono">
+            <span>{{ formatDate(conv.updated_at || conv.created_at) }}</span>
+            <span v-if="conv.num_agents">{{ conv.num_agents }} agents</span>
+            <span v-if="conv.grounding != null">Grounding: {{ (conv.grounding * 100).toFixed(0) }}%</span>
+          </div>
         </div>
-        <div v-if="conversations.length === 0 && !sidebarLoading" class="conv-empty">No conversations yet</div>
+        <div v-if="conversations.length === 0 && !sidebarLoading" class="conv-empty">No simulations yet</div>
         <div v-if="sidebarLoading" class="conv-loading"><div class="dots"><span></span><span></span><span></span></div></div>
       </div>
     </aside>
@@ -26,8 +30,8 @@
     <main class="ch-main">
       <div v-if="!activeConversationId" class="empty-state">
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.25"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-        <h2>Select a conversation</h2>
-        <p>Your past predictions and chats appear here.</p>
+        <h2>Select a simulation</h2>
+        <p>Your past predictions and simulations appear here.</p>
       </div>
 
       <!-- Messages -->
@@ -132,7 +136,7 @@ let pollTimers = {}
 const canSend = computed(() => query.value.trim() !== '')
 
 const loadConversations = async () => { sidebarLoading.value = true; try { const r = await fetch('/api/conversations'); if (r.ok) conversations.value = await r.json() } catch (e) { console.error(e) } finally { sidebarLoading.value = false } }
-const createConversation = async () => { stopAllPolling(); activeConversationId.value = null; messages.value = []; try { const r = await fetch('/api/conversations', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: 'New Conversation' }) }); if (r.ok) { const c = await r.json(); conversations.value.unshift(c); activeConversationId.value = c.id; emit('conversation-selected', c.id); await nextTick(); textareaRef.value?.focus() } } catch (e) { console.error(e) } }
+const createConversation = async () => { stopAllPolling(); activeConversationId.value = null; messages.value = []; try { const r = await fetch('/api/conversations', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: 'New Simulation' }) }); if (r.ok) { const c = await r.json(); conversations.value.unshift(c); activeConversationId.value = c.id; emit('conversation-selected', c.id); await nextTick(); textareaRef.value?.focus() } } catch (e) { console.error(e) } }
 const selectConversation = (id) => { if (id === activeConversationId.value) return; stopAllPolling(); activeConversationId.value = id; emit('conversation-selected', id); loadConversation(id) }
 const loadConversation = async (id) => { if (!id) return; messagesLoading.value = true; try { const r = await fetch(`/api/conversations/${id}`); if (r.ok) { const d = await r.json(); messages.value = d.messages || []; messages.value.forEach((m, i) => { if (m.role === 'assistant' && (m.status === 'pending' || m.status === 'running') && m.prediction_id) startPolling(m.prediction_id, i) }); await nextTick(); scrollToBottom() } } catch (e) { console.error(e) } finally { messagesLoading.value = false } }
 
@@ -149,7 +153,7 @@ const sendMessage = async () => {
       const am = { role: 'assistant', status: d.status || 'pending', prediction_id: d.prediction_id, content: '', progress_message: 'Starting prediction...' }
       messages.value.push(am); const mi = messages.value.length - 1; await nextTick(); scrollToBottom()
       const conv = conversations.value.find(c => c.id === activeConversationId.value)
-      if (conv && (conv.title === 'New Conversation' || !conv.title)) conv.title = text.slice(0, 80)
+      if (conv && (conv.title === 'New Simulation' || !conv.title)) conv.title = text.slice(0, 80)
       if (d.prediction_id) startPolling(d.prediction_id, mi)
     }
   } catch (e) { messages.value.push({ role: 'assistant', status: 'error', error: 'Failed to send.' }) }
@@ -214,7 +218,7 @@ onUnmounted(() => stopAllPolling())
 .conv-item:hover { background: var(--c-surface-2); }
 .conv-item.active { background: var(--c-surface-2); border-left: 2px solid var(--c-accent); }
 .conv-title { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.conv-date { font-size: 11px; color: var(--c-text-muted); margin-top: 2px; }
+.conv-meta { font-size: 11px; color: var(--c-text-muted); margin-top: 2px; display: flex; gap: 8px; flex-wrap: wrap; }
 .conv-empty { padding: 24px 12px; font-size: 13px; color: var(--c-text-muted); text-align: center; }
 .conv-loading { padding: 24px; display: flex; justify-content: center; }
 

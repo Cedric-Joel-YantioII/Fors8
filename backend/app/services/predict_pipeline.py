@@ -66,6 +66,13 @@ class PredictionJob:
     graph_id: str = ""
     error: str = ""
 
+    # Full simulation state (for reload)
+    social_results: Optional[Dict[str, Any]] = None
+    agent_decisions: Optional[List[Dict[str, Any]]] = None
+    grounding_score: float = 0.0
+    grounding_report: Optional[Dict[str, Any]] = None
+    scenario_type: str = ""
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "prediction_id": self.prediction_id,
@@ -84,6 +91,11 @@ class PredictionJob:
             "answers": self.answers,
             "graph_id": self.graph_id,
             "error": self.error,
+            "social_results": self.social_results,
+            "agent_decisions": self.agent_decisions,
+            "grounding_score": self.grounding_score,
+            "grounding_report": self.grounding_report,
+            "scenario_type": self.scenario_type,
         }
 
 
@@ -1300,6 +1312,22 @@ def _run_pipeline(job: PredictionJob, conversation_context: Optional[str] = None
                 total_events=len(ws.events),
             )
 
+            # Attach full structured event log to the first run for persistence
+            if run_idx == 0:
+                outcome._all_events = [
+                    {
+                        "round": e.round_num,
+                        "actor_id": e.actor_id,
+                        "actor_name": e.actor_name,
+                        "action": e.action_type.value if hasattr(e.action_type, 'value') else str(e.action_type),
+                        "target_id": e.target_actor_id,
+                        "target_name": e.target_actor_name,
+                        "consequence": e.consequence_summary,
+                        "escalation_delta": e.escalation_delta,
+                    }
+                    for e in ws.events
+                ]
+
             # Update progress (thread-safe)
             with _progress_lock:
                 _completed_runs[0] += 1
@@ -1579,6 +1607,51 @@ Be specific. Use numbers from the simulation data. Cite the real-world context w
             )
         except Exception as e:
             logger.warning("Brier forecast save failed (non-fatal): %s", e)
+
+        # Populate full simulation state for persistence / reload
+        job.scenario_type = scenario_config.scenario_type if scenario_config else ""
+
+        # Social simulation results (from first run)
+        if social_sim:
+            try:
+                pop_state = social_sim.get_population_state()
+                last_social = social_sim._aggregate_round(job.rounds_per_run) if social_sim.round_posts else {}
+                job.social_results = {
+                    "population": pop_state,
+                    "final_round": last_social,
+                    "escalation_pressure": last_social.get("escalation_pressure", 0),
+                    "deescalation_pressure": last_social.get("deescalation_pressure", 0),
+                    "country_sentiments": last_social.get("country_sentiments", {}),
+                }
+            except Exception as e:
+                logger.warning("Failed to capture social results: %s", e)
+
+        # Agent decisions — extract from first run's event log
+        if all_outcomes:
+            try:
+                first_outcome = all_outcomes[0]
+                # Use _run_events if we recorded them, otherwise fall back to key_events
+                if hasattr(first_outcome, '_all_events') and first_outcome._all_events:
+                    job.agent_decisions = first_outcome._all_events
+                else:
+                    # Reconstruct from key_events (summary strings)
+                    job.agent_decisions = [{"summary": ev} for ev in (first_outcome.key_events or [])]
+            except Exception as e:
+                logger.warning("Failed to capture agent decisions: %s", e)
+
+        # Grounding score and report
+        if 'grounding_report' in dir() and grounding_report:
+            try:
+                job.grounding_score = grounding_report.grounding_score
+                job.grounding_report = {
+                    "grounding_score": grounding_report.grounding_score,
+                    "grounded_claims": grounding_report.grounded_claims,
+                    "total_claims": grounding_report.total_claims,
+                    "suspicious_claims": [str(c) for c in (grounding_report.suspicious_claims or [])],
+                    "ungrounded_claims": [str(c) for c in (grounding_report.ungrounded_claims or [])] if hasattr(grounding_report, 'ungrounded_claims') else [],
+                }
+            except Exception as e:
+                logger.warning("Failed to capture grounding report: %s", e)
 
         # Step 9: Cleanup
         job.status = "complete"

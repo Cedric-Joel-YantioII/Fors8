@@ -99,6 +99,31 @@
             </div>
           </section>
 
+          <!-- Grounding Score -->
+          <section v-if="predictionData.grounding_score != null" class="section">
+            <div class="section-hdr">
+              <span class="section-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              </span>
+              <h2>Grounding Score</h2>
+            </div>
+            <div class="grounding-score">
+              <div class="grounding-val mono" :class="groundingColor">{{ (predictionData.grounding_score * 100).toFixed(0) }}%</div>
+              <div v-if="predictionData.grounding_report" class="grounding-report" v-html="formatAnswer(predictionData.grounding_report)"></div>
+            </div>
+          </section>
+
+          <!-- Social Simulation -->
+          <section v-if="hasSocialResults" class="section">
+            <div class="section-hdr">
+              <span class="section-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+              </span>
+              <h2>Social Simulation</h2>
+            </div>
+            <div class="answer-body" v-html="formatAnswer(typeof predictionData.social_results === 'string' ? predictionData.social_results : JSON.stringify(predictionData.social_results, null, 2))"></div>
+          </section>
+
           <!-- Run Info -->
           <footer v-if="predictionData.num_runs" class="run-footer mono">
             <span v-if="predictionData.num_runs">{{ predictionData.num_runs }} runs</span>
@@ -106,6 +131,10 @@
             <span v-if="predictionData.num_agents">{{ predictionData.num_agents }} actors</span>
             <span class="dot-sep"></span>
             <span v-if="predictionData.gpu_cost">${{ predictionData.gpu_cost.toFixed(2) }} GPU</span>
+            <template v-if="predictionData.scenario_type">
+              <span class="dot-sep"></span>
+              <span>{{ predictionData.scenario_type }}</span>
+            </template>
           </footer>
         </div>
       </div>
@@ -183,6 +212,14 @@ const emit = defineEmits(['retry', 'switch-tab'])
 const mainAnswer = computed(() => props.predictionData?.answers?.main_answer || props.predictionData?.main_answer || '')
 const hasOutcomes = computed(() => props.predictionData?.outcomes && Object.keys(props.predictionData.outcomes).length > 0)
 const hasActors = computed(() => props.predictionData?.actor_results && Object.keys(props.predictionData.actor_results).length > 0)
+const hasSocialResults = computed(() => props.predictionData?.social_results && (typeof props.predictionData.social_results === 'string' ? props.predictionData.social_results.length > 0 : Object.keys(props.predictionData.social_results).length > 0))
+const groundingColor = computed(() => {
+  const s = props.predictionData?.grounding_score
+  if (s == null) return ''
+  if (s >= 0.7) return 'high'
+  if (s >= 0.4) return 'mid'
+  return 'low'
+})
 const canSend = computed(() => chatInput.value.trim() !== '')
 
 const chatMessages = ref([])
@@ -364,6 +401,14 @@ watch(() => props.predictionData?.prediction_id, () => { chatMessages.value = []
 .actor-val.has-casualties { color: var(--c-red); font-weight: 600; }
 .force-bar { position: absolute; left: 0; top: 0; bottom: 0; background: var(--c-surface-2); border-radius: 2px; z-index: 0; }
 .actor-val .force-bar + * { position: relative; z-index: 1; }
+
+/* Grounding score */
+.grounding-score { display: flex; align-items: flex-start; gap: 16px; }
+.grounding-val { font-size: 28px; font-weight: 600; flex-shrink: 0; }
+.grounding-val.high { color: var(--c-green); }
+.grounding-val.mid { color: var(--c-amber); }
+.grounding-val.low { color: var(--c-red); }
+.grounding-report { font-size: 13px; line-height: 1.6; color: var(--c-text-2); }
 
 /* Run footer */
 .run-footer { display: flex; align-items: center; gap: 10px; padding-top: 20px; margin-top: 8px; font-size: 11px; color: var(--c-text-muted); border-top: 1px solid var(--c-surface-2); }

@@ -301,8 +301,10 @@ class Database:
             cur.execute(
                 """INSERT INTO predictions (id, question, status, progress_pct, progress_message,
                        model_name, num_agents, num_runs, outcomes, actor_results, answers,
-                       gpu_cost, error, graph_id, created_at, completed_at)
-                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                       gpu_cost, error, graph_id, social_results, agent_decisions,
+                       grounding_score, grounding_report, scenario_type,
+                       created_at, completed_at)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                    ON CONFLICT (id) DO UPDATE SET
                        status = EXCLUDED.status,
                        progress_pct = EXCLUDED.progress_pct,
@@ -313,6 +315,11 @@ class Database:
                        gpu_cost = EXCLUDED.gpu_cost,
                        error = EXCLUDED.error,
                        graph_id = EXCLUDED.graph_id,
+                       social_results = EXCLUDED.social_results,
+                       agent_decisions = EXCLUDED.agent_decisions,
+                       grounding_score = EXCLUDED.grounding_score,
+                       grounding_report = EXCLUDED.grounding_report,
+                       scenario_type = EXCLUDED.scenario_type,
                        completed_at = EXCLUDED.completed_at""",
                 (
                     pred_id,
@@ -329,6 +336,11 @@ class Database:
                     prediction_data.get('gpu_cost', 0),
                     prediction_data.get('error', ''),
                     prediction_data.get('graph_id', ''),
+                    json.dumps(prediction_data.get('social_results'), default=str) if prediction_data.get('social_results') else None,
+                    json.dumps(prediction_data.get('agent_decisions'), default=str) if prediction_data.get('agent_decisions') else None,
+                    prediction_data.get('grounding_score'),
+                    json.dumps(prediction_data.get('grounding_report'), default=str) if prediction_data.get('grounding_report') else None,
+                    prediction_data.get('scenario_type', ''),
                     prediction_data.get('created_at') or datetime.utcnow(),
                     prediction_data.get('completed_at') or None,
                 ),
@@ -345,11 +357,14 @@ class Database:
             return False
         try:
             # Map of allowed fields to their SQL types (jsonb fields need json.dumps)
-            jsonb_fields = {'outcomes', 'actor_results', 'answers'}
+            jsonb_fields = {'outcomes', 'actor_results', 'answers',
+                            'social_results', 'agent_decisions', 'grounding_report'}
             allowed = {'question', 'status', 'progress_pct', 'progress_message',
                        'model_name', 'num_agents', 'num_runs', 'outcomes',
                        'actor_results', 'answers', 'gpu_cost', 'error',
-                       'graph_id', 'completed_at'}
+                       'graph_id', 'social_results', 'agent_decisions',
+                       'grounding_score', 'grounding_report', 'scenario_type',
+                       'completed_at'}
             sets = []
             vals = []
             for k, v in updates.items():

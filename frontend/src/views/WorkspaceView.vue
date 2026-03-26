@@ -254,7 +254,98 @@ const statusText = computed(() => {
 
 // ─── Layout Helpers ───
 const toggleMaximize = () => { viewMode.value = viewMode.value === 'graph' ? 'split' : 'graph' }
-const onConversationSelected = (id) => { conversationId.value = id }
+const onConversationSelected = async (id) => {
+  conversationId.value = id
+  if (!id) return
+
+  // Fetch the conversation to find the latest prediction_id
+  try {
+    const resp = await fetch(`/api/conversations/${id}`)
+    if (!resp.ok) return
+    const conv = await resp.json()
+    const msgs = conv.messages || []
+
+    // Find the latest message that has a prediction_id
+    let latestPredictionId = null
+    for (let i = msgs.length - 1; i >= 0; i--) {
+      if (msgs[i].prediction_id) {
+        latestPredictionId = msgs[i].prediction_id
+        break
+      }
+    }
+
+    if (latestPredictionId) {
+      // Fetch the prediction data
+      const predResp = await fetch(`/api/predict/${latestPredictionId}`)
+      if (!predResp.ok) return
+      const data = await predResp.json()
+
+      if (data.status === 'complete') {
+        // Load completed prediction into the PredictionPanel
+        predictionStatus.value = 'complete'
+        errorMessage.value = ''
+        predictionData.value = {
+          question: data.question,
+          prediction_id: data.prediction_id,
+          outcomes: data.outcomes || {},
+          actor_results: data.actor_results || {},
+          answers: data.answers || {},
+          gpu_cost: data.gpu_cost || 0,
+          num_runs: data.num_runs || 0,
+          num_agents: data.num_agents || 0,
+          graph_id: data.graph_id || '',
+          grounding_score: data.grounding_score,
+          grounding_report: data.grounding_report,
+          social_results: data.social_results,
+          agent_decisions: data.agent_decisions,
+          scenario_type: data.scenario_type,
+        }
+        currentStep.value = 5
+        if (data.graph_id && !graphData.value) loadGraphForPrediction(data.graph_id)
+        // Switch to workbench view to show the PredictionPanel
+        viewMode.value = 'workbench'
+      } else if (data.status === 'failed' || data.status === 'error') {
+        predictionStatus.value = 'error'
+        errorMessage.value = data.error || 'Prediction failed.'
+        predictionData.value = null
+        viewMode.value = 'workbench'
+      } else {
+        // Still running — start polling for this prediction
+        predictionStatus.value = data.status || 'pending'
+        loadingStage.value = data.progress_message || ''
+        predictionData.value = null
+        errorMessage.value = ''
+        stopPredictionPolling()
+        predictionFetchFailCount = 0
+
+        // Temporarily set predictionId-like behavior via direct polling
+        const pollExisting = async () => {
+          try {
+            const r = await fetch(`/api/predict/${latestPredictionId}`)
+            if (!r.ok) { predictionFetchFailCount++; if (predictionFetchFailCount >= 5) { errorMessage.value = 'Server error.'; stopPredictionPolling() }; return }
+            predictionFetchFailCount = 0
+            const d = await r.json()
+            predictionStatus.value = d.status || 'pending'
+            loadingStage.value = d.progress_message || ''
+            if (d.status === 'failed') { errorMessage.value = d.error || 'Failed.'; stopPredictionPolling() }
+            if (d.status === 'complete') {
+              predictionData.value = { question: d.question, prediction_id: d.prediction_id, outcomes: d.outcomes || {}, actor_results: d.actor_results || {}, answers: d.answers || {}, gpu_cost: d.gpu_cost || 0, num_runs: d.num_runs || 0, num_agents: d.num_agents || 0, graph_id: d.graph_id || '', grounding_score: d.grounding_score, grounding_report: d.grounding_report, social_results: d.social_results, agent_decisions: d.agent_decisions, scenario_type: d.scenario_type }
+              if (d.graph_id && !graphData.value) loadGraphForPrediction(d.graph_id)
+              if (d.conversation_id) conversationId.value = d.conversation_id
+              currentStep.value = 5
+              stopPredictionPolling()
+            }
+          } catch (e) { predictionFetchFailCount++; if (predictionFetchFailCount >= 5) { errorMessage.value = 'Network error.'; stopPredictionPolling() } }
+        }
+        pollExisting()
+        predictionPollTimer = setInterval(pollExisting, 2000)
+        viewMode.value = 'workbench'
+      }
+    }
+  } catch (e) {
+    console.error('Failed to load conversation prediction:', e)
+  }
+}
 
 // ═══════════════════════════════════════════════
 // PROJECT WORKFLOW LOGIC
@@ -629,7 +720,7 @@ const fetchPrediction = async () => {
       loadGraphForPrediction(data.graph_id)
     }
     if (data.status === 'complete') {
-      predictionData.value = { question: data.question, prediction_id: data.prediction_id, outcomes: data.outcomes || {}, actor_results: data.actor_results || {}, answers: data.answers || {}, gpu_cost: data.gpu_cost || 0, num_runs: data.num_runs || 0, num_agents: data.num_agents || 0, graph_id: data.graph_id || '' }
+      predictionData.value = { question: data.question, prediction_id: data.prediction_id, outcomes: data.outcomes || {}, actor_results: data.actor_results || {}, answers: data.answers || {}, gpu_cost: data.gpu_cost || 0, num_runs: data.num_runs || 0, num_agents: data.num_agents || 0, graph_id: data.graph_id || '', grounding_score: data.grounding_score, grounding_report: data.grounding_report, social_results: data.social_results, agent_decisions: data.agent_decisions, scenario_type: data.scenario_type }
       if (data.graph_id && !graphData.value) loadGraphForPrediction(data.graph_id)
       if (data.conversation_id) conversationId.value = data.conversation_id
       currentStep.value = 5

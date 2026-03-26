@@ -89,11 +89,21 @@
           </div>
         </div>
 
+        <!-- Grounding Score -->
+        <div v-if="result.grounding_score != null" class="card">
+          <h2 class="card-title">Grounding Score</h2>
+          <div class="grounding-display">
+            <div class="grounding-value" :class="result.grounding_score >= 0.7 ? 'high' : result.grounding_score >= 0.4 ? 'mid' : 'low'">{{ (result.grounding_score * 100).toFixed(0) }}%</div>
+            <div v-if="result.grounding_report" class="grounding-text" v-html="formatAnswer(result.grounding_report)"></div>
+          </div>
+        </div>
+
         <!-- Run Info -->
         <div class="card run-info">
           <span>{{ result.num_runs }} simulation runs</span>
           <span>{{ result.num_agents }} actors</span>
           <span v-if="result.gpu_cost">GPU cost: ${{ result.gpu_cost.toFixed(2) }}</span>
+          <span v-if="result.scenario_type">{{ result.scenario_type }}</span>
         </div>
 
         <div class="actions">
@@ -194,6 +204,10 @@ const fetchStatus = async () => {
         gpu_cost: data.gpu_cost || 0,
         num_runs: data.num_runs || 0,
         num_agents: data.num_agents || 0,
+        grounding_score: data.grounding_score,
+        grounding_report: data.grounding_report,
+        social_results: data.social_results,
+        scenario_type: data.scenario_type,
       }
     }
 
@@ -531,6 +545,14 @@ const formatAnswer = (text) => {
 
 .actor-name { font-weight: 500; }
 .actor-stat { font-family: 'DM Mono', monospace; color: #555; }
+
+/* Grounding */
+.grounding-display { display: flex; align-items: flex-start; gap: 16px; }
+.grounding-value { font-family: 'DM Mono', monospace; font-size: 28px; font-weight: 600; flex-shrink: 0; }
+.grounding-value.high { color: #16a34a; }
+.grounding-value.mid { color: #d97706; }
+.grounding-value.low { color: #dc2626; }
+.grounding-text { font-size: 14px; color: #555; line-height: 1.65; }
 
 /* QA */
 .qa-block {

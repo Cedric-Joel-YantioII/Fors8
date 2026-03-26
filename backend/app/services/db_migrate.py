@@ -186,6 +186,11 @@ def ensure_schema(database_url: str = None) -> None:
 
         # Incremental migrations: add columns that may not exist yet
         _add_column_if_missing(cur, 'predictions', 'graph_id', 'TEXT')
+        _add_column_if_missing(cur, 'predictions', 'social_results', 'JSONB')
+        _add_column_if_missing(cur, 'predictions', 'agent_decisions', 'JSONB')
+        _add_column_if_missing(cur, 'predictions', 'grounding_score', 'FLOAT')
+        _add_column_if_missing(cur, 'predictions', 'grounding_report', 'JSONB')
+        _add_column_if_missing(cur, 'predictions', 'scenario_type', 'TEXT')
 
         cur.close()
         conn.close()

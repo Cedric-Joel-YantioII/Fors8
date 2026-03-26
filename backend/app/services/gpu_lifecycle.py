@@ -65,9 +65,9 @@ OLLAMA_MODELS = {
 VAST_API_BASE = "https://console.vast.ai/api/v0"
 
 # Default idle timeout before auto-destroy (seconds).
-# Set to 0 to disable auto-destroy (manual kill only — recommended for spot instances
-# since they bill by the hour, so auto-killing at 10min wastes 50min of paid time).
-DEFAULT_IDLE_TIMEOUT = int(os.environ.get("GPU_IDLE_TIMEOUT_SECONDS", "0"))  # 0 = no auto-kill (manual only)
+# 2-3 hours keeps the instance warm between simulations without wasting money.
+# Restarting instances wastes 5-15 min on Docker boot + model pull each time.
+DEFAULT_IDLE_TIMEOUT = int(os.environ.get("GPU_IDLE_TIMEOUT_SECONDS", "10800"))  # 3 hours
 # Background watchdog poll interval
 WATCHDOG_INTERVAL = 30
 
