@@ -198,6 +198,66 @@
     }
   },
 
+  "hormuz_yuan_toll_system": {
+    "description": "Iran is operating a de facto toll system at Hormuz — requiring yuan payment for passage. This is the most significant challenge to the petrodollar in its 52-year history.",
+    "confirmed_facts": {
+      "yuan_tolls": "At least 2 vessels confirmed paying tolls in yuan (Lloyd's List Intelligence). Iran told CNN it allows tankers through only if cargo traded in Chinese yuan, not USD.",
+      "countries_negotiating": "Iran negotiating yuan-for-passage terms with 8 countries",
+      "parliament_bill": "Iranian parliament drafting bill to legally formalize Hormuz transit tolls",
+      "iran_oil_to_china": "95% of Iran's oil already sold to China in yuan. 1.5M bpd flowing. Iran earns $180M+/day",
+      "chinese_vessels_priority": "Mar 5: IRGC allowed only Chinese vessels through strait. Bulk carrier 'Iron Maiden' transited signaling 'CHINA OWNER'",
+      "all_payments_via_cips": "All Iranian oil payments processed via CIPS (China's SWIFT alternative) in renminbi"
+    },
+    "japan_energy_crisis": {
+      "dependence": "Japan imports 85%+ energy. 94% crude from Middle East (UAE 43%, Saudi 39%). 93% of oil transits Hormuz.",
+      "stranded_vessels": "28 Japanese-owned vessels stranded around Persian Gulf (Mar 13)",
+      "strategic_reserves": "470 million barrels (254 days) — released 80 million barrels Mar 16",
+      "vlcc_costs": "VLCC costs increased 6x since Feb 28",
+      "no_navy": "Japan ruled out sending navy for escort (Mar 16)",
+      "public_anxiety": "90% of Japanese public anxious about economic impact (Asahi Shimbun poll)",
+      "yuan_pressure": "With 93% of oil transiting Hormuz and Iran demanding yuan, Japan faces pressure to settle in yuan or lose access"
+    },
+    "india_crisis": {
+      "reserves": "Strategic oil reserves cover only 9.5 DAYS",
+      "dependence": "Imports 85% of crude, 93% transits Hormuz",
+      "rupee_crash": "Record low 93.94/USD, 3.6% YTD depreciation",
+      "gdp_cut": "Goldman Sachs cut 2026 GDP forecast to 5.9%",
+      "fled": "375,000 Indians fled Gulf region",
+      "naval_escort": "Operation Urja Suraksha — 5+ warships escorting 20+ Indian-flagged ships",
+      "payment_currency": "Iran seeking USD from India but some traders accepting rupees"
+    },
+    "petrodollar_under_assault": {
+      "usd_reserve_share": "56.9% (Q3 2025) — lowest since 1995, down from 72% peak in 2001",
+      "deutsche_bank_quote": "Mar 25: 'Iran war could be the making of the petroyuan'",
+      "pre_war_non_dollar_oil": "~20% of global oil trade used non-dollar currencies; 80% still in dollars",
+      "assessment": "Three pillars of petrodollar under SIMULTANEOUS pressure for first time: stable Gulf production, dollar-based oil trade, US security architecture",
+      "mbridge_volume": "Project mBridge (blockchain CBDC platform) handled $55 BILLION in trade in March 2026 alone",
+      "mbridge_members": "People's Bank of China, Bank of Thailand, Central Bank of UAE, HKMA — Saudi Central Bank joined 2024",
+      "saudi_yuan": "Saudi agreed to accept yuan for oil to China. $7B currency swap agreement signed. Chinese refiners allocated ~50M barrels from Saudi for early 2026"
+    },
+    "sanctions_circumvention": {
+      "cips": "China's CIPS processes Iranian oil payments in renminbi, bypassing SWIFT entirely",
+      "dark_fleet": "Fleet of tankers settled entirely outside US banking system",
+      "intermediaries": "Iran uses intermediary companies in Oman and Malaysia to launder oil origin",
+      "offshore_banks": "Accounts in Qatar, UAE, Mauritius",
+      "us_sanctions_waiver": "Mar 20: US issued 30-day sanctions waiver for Iranian oil already loaded (must unload by Apr 19)"
+    },
+    "market_impact": {
+      "oil_peak": "Dubai crude hit $166 record (Mar 19). Brent peaked $126",
+      "regional_exports_collapsed": "Oil exports from region fell 60%: 25M to ~10M bpd by Mar 15",
+      "iraq_collapsed": "Iraq production dropped 70% (4.3 to 1.3M bpd)",
+      "iea_release": "IEA released 400 million barrels from strategic reserves (Mar 11)",
+      "shipping_attacks": "24 confirmed attacks on merchant vessels, 12 ships damaged, 7 abandoned, 12 seafarers killed/missing",
+      "sp500": "S&P 500 declined 4.55%. South Korean KOSPI crashed 12% (largest since 2008)"
+    },
+    "qatar_lng_crisis": {
+      "production_halt": "Qatar stopped gas production Mar 2, declared force majeure Mar 4",
+      "damage": "Ras Laffan 17% capacity destroyed, $20B/year loss, 3-5 year repair",
+      "global_impact": "Qatar = 30% of global LNG supply. European gas surged from EUR 30 to EUR 60/MWh",
+      "lng_transport": "LNG transport costs Atlantic to Asia surged to $264,000/day (~6x pre-war)"
+    }
+  },
+
   "geopolitical_implications": {
     "us_hegemony_challenged": {
       "description": "This war demonstrates limits of US military superiority — air power alone cannot defeat Iran, and Iran's asymmetric capabilities (cheap drones vs expensive interceptors) have exposed a structural vulnerability",
