@@ -248,27 +248,7 @@ def add_grounding_to_answer(
     answer_text: str,
     grounding_report: GroundingReport,
 ) -> str:
-    """Append a grounding transparency section to the answer."""
-    if not grounding_report or grounding_report.total_claims == 0:
-        return answer_text
-
-    score_label = "HIGH" if grounding_report.grounding_score > 0.7 else \
-                  "MEDIUM" if grounding_report.grounding_score > 0.4 else "LOW"
-
-    transparency = f"""
-
-## Data Grounding Transparency
-- **Grounding Score**: {grounding_report.grounding_score:.0%} ({score_label})
-- **Claims analyzed**: {grounding_report.total_claims}
-- **Data-grounded claims**: {grounding_report.grounded_claims}
-- **Ungrounded claims**: {grounding_report.ungrounded_claims}"""
-
-    if grounding_report.suspicious_claims:
-        transparency += f"\n- **Potentially ungrounded assertions**: {len(grounding_report.suspicious_claims)}"
-        transparency += "\n  - Note: These claims may be based on the model's training data rather than provided situation data."
-
-    if grounding_report.cited_data_points:
-        top_refs = grounding_report.cited_data_points[:5]
-        transparency += f"\n- **Key data references**: {', '.join(top_refs)}"
-
-    return answer_text + transparency
+    """Return answer text unchanged — grounding data is stored separately
+    in the prediction record and displayed in its own UI card.
+    No longer appends raw data reference paths to the answer text."""
+    return answer_text
