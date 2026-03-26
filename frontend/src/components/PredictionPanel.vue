@@ -294,7 +294,15 @@ const sortedSentiments = computed(() => {
 const socialFinalRound = computed(() => {
   const sr = props.predictionData?.social_results
   if (!sr || typeof sr === 'string' || !sr.final_round) return null
-  return sr.final_round
+  // Only include scalar values — skip nested objects/arrays (already shown elsewhere)
+  const fr = sr.final_round
+  const scalars = {}
+  for (const [k, v] of Object.entries(fr)) {
+    if (typeof v === 'number' || typeof v === 'string' || typeof v === 'boolean') {
+      scalars[k] = typeof v === 'number' ? Math.round(v * 1000) / 1000 : v
+    }
+  }
+  return Object.keys(scalars).length > 0 ? scalars : null
 })
 const canSend = computed(() => chatInput.value.trim() !== '')
 
