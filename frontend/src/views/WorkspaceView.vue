@@ -4,7 +4,10 @@
     <header class="ws-header">
       <div class="header-left">
         <div class="brand" @click="router.push('/')">
-          <span class="brand-mark">F8</span>
+          <svg class="brand-logo" width="32" height="32" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <rect width="100" height="100" rx="16" fill="#000"/>
+            <text x="50" y="68" text-anchor="middle" font-family="Inter, sans-serif" font-weight="800" font-size="48" fill="#fff">F8</text>
+          </svg>
           <span class="brand-text">FORS8</span>
         </div>
       </div>
@@ -885,10 +888,7 @@ watch(() => route.name, (newName) => {
 .header-right { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
 
 .brand { display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; }
-.brand-mark {
-  font-family: var(--mono); font-weight: 700; font-size: 12px;
-  color: #fff; background: var(--c-text); padding: 2px 5px; border-radius: 3px; letter-spacing: 0.5px;
-}
+.brand-logo { flex-shrink: 0; }
 .brand-text { font-family: var(--mono); font-weight: 600; font-size: 13px; letter-spacing: 1.5px; color: var(--c-text-muted); }
 
 /* Tab rail */
