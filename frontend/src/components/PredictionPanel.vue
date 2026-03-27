@@ -88,13 +88,13 @@
               <div v-for="(actor, id) in predictionData.actor_results" :key="id" class="actor-row">
                 <span class="actor-name">{{ actor.name || id }}</span>
                 <span class="actor-val mono">
-                  <span class="force-bar" :style="{ width: (actor.avg_final_force || 0) + '%' }"></span>
-                  {{ actor.avg_final_force?.toFixed(0) || '\u2014' }}
+                  <span class="force-bar" :style="{ width: (actor.force_strength || actor.avg_final_force || 0) + '%' }"></span>
+                  {{ (actor.force_strength ?? actor.avg_final_force)?.toFixed?.(0) ?? '\u2014' }}
                 </span>
-                <span class="actor-val mono" :class="{ 'has-casualties': actor.avg_casualties > 0 }">
-                  {{ actor.avg_casualties > 0 ? actor.avg_casualties.toLocaleString() : '0' }}
+                <span class="actor-val mono" :class="{ 'has-casualties': (actor.casualties || actor.avg_casualties) > 0 }">
+                  {{ (actor.casualties || actor.avg_casualties) > 0 ? (actor.casualties || actor.avg_casualties).toLocaleString() : '0' }}
                 </span>
-                <span class="actor-val mono">{{ actor.avg_approval ? (actor.avg_approval * 100).toFixed(0) + '%' : '\u2014' }}</span>
+                <span class="actor-val mono">{{ (actor.domestic_approval ?? actor.avg_approval) ? ((actor.domestic_approval ?? actor.avg_approval) * 100).toFixed(0) + '%' : '\u2014' }}</span>
               </div>
             </div>
           </section>
