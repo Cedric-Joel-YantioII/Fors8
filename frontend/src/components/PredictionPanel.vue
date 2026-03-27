@@ -32,7 +32,7 @@
     <!-- Report + Chat Layout -->
     <div v-else class="layout">
       <!-- LEFT: Report -->
-      <div class="col-report" ref="reportCol">
+      <div class="col-report" :class="{ centered: chatCollapsed }" ref="reportCol">
         <div class="report-inner">
           <!-- Header -->
           <header class="report-hdr">
@@ -461,14 +461,17 @@ watch(() => props.predictionData?.prediction_id, () => { chatMessages.value = []
 
 /* Layout */
 .layout { display: flex; height: 100%; overflow: hidden; }
-.col-report { flex: 1; overflow-y: auto; border-right: 1px solid var(--c-border); }
-.col-chat { flex: 0 0 360px; max-width: 360px; display: flex; flex-direction: column; transition: flex-basis 0.2s, max-width 0.2s, padding 0.2s; }
-.col-chat.collapsed { flex: 0 0 40px; max-width: 40px; overflow: hidden; }
+.col-report { flex: 1; overflow-y: auto; }
+.col-report.centered { display: flex; justify-content: center; }
+.col-report.centered .report-inner { max-width: 780px; width: 100%; }
+.col-chat { flex: 0 0 360px; max-width: 360px; display: flex; flex-direction: column; border-left: 1px solid var(--c-border); transition: flex-basis 0.2s, max-width 0.2s; }
+.col-chat.collapsed { flex: 0 0 36px; max-width: 36px; min-width: 36px; overflow: hidden; cursor: pointer; }
 .col-chat.collapsed .chat-feed,
 .col-chat.collapsed .chat-input-wrap { display: none; }
-.col-chat.collapsed .chat-top { writing-mode: vertical-rl; text-orientation: mixed; padding: 16px 10px; cursor: pointer; }
-.col-chat.collapsed .chat-title { font-size: 12px; }
-.collapse-btn { background: none; border: none; cursor: pointer; color: var(--c-text-muted); padding: 4px; }
+.col-chat.collapsed .chat-top { writing-mode: vertical-rl; text-orientation: mixed; padding: 16px 8px; cursor: pointer; height: 100%; display: flex; align-items: center; justify-content: center; }
+.col-chat.collapsed .chat-title { font-size: 11px; letter-spacing: 2px; }
+.col-chat.collapsed .collapse-btn { display: none; }
+.collapse-btn { background: none; border: none; cursor: pointer; color: var(--c-text-muted); padding: 4px; display: flex; align-items: center; }
 
 /* Report */
 .report-inner { padding: 36px 32px 60px; max-width: 680px; }
