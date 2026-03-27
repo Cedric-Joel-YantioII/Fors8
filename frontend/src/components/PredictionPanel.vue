@@ -184,10 +184,16 @@
         </div>
       </div>
 
-      <!-- RIGHT: Chat -->
-      <div class="col-chat">
-        <div class="chat-top">
+      <!-- RIGHT: Chat (collapsible) -->
+      <div class="col-chat" :class="{ collapsed: chatCollapsed }">
+        <div class="chat-top" @click="chatCollapsed = !chatCollapsed">
           <h3 class="chat-title">Follow-up Questions</h3>
+          <button class="collapse-btn" :title="chatCollapsed ? 'Expand' : 'Collapse'">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <path v-if="chatCollapsed" d="M15 18l-6-6 6-6"/>
+              <path v-else d="M9 18l6-6-6-6"/>
+            </svg>
+          </button>
         </div>
 
         <div class="chat-feed" ref="chatFeedEl">
@@ -306,6 +312,7 @@ const socialFinalRound = computed(() => {
 })
 const canSend = computed(() => chatInput.value.trim() !== '')
 
+const chatCollapsed = ref(true)
 const chatMessages = ref([])
 const chatInput = ref('')
 const chatSending = ref(false)
@@ -454,8 +461,14 @@ watch(() => props.predictionData?.prediction_id, () => { chatMessages.value = []
 
 /* Layout */
 .layout { display: flex; height: 100%; overflow: hidden; }
-.col-report { flex: 0 0 60%; max-width: 60%; overflow-y: auto; border-right: 1px solid var(--c-border); }
-.col-chat { flex: 0 0 40%; max-width: 40%; display: flex; flex-direction: column; }
+.col-report { flex: 1; overflow-y: auto; border-right: 1px solid var(--c-border); }
+.col-chat { flex: 0 0 360px; max-width: 360px; display: flex; flex-direction: column; transition: flex-basis 0.2s, max-width 0.2s, padding 0.2s; }
+.col-chat.collapsed { flex: 0 0 40px; max-width: 40px; overflow: hidden; }
+.col-chat.collapsed .chat-feed,
+.col-chat.collapsed .chat-input-wrap { display: none; }
+.col-chat.collapsed .chat-top { writing-mode: vertical-rl; text-orientation: mixed; padding: 16px 10px; cursor: pointer; }
+.col-chat.collapsed .chat-title { font-size: 12px; }
+.collapse-btn { background: none; border: none; cursor: pointer; color: var(--c-text-muted); padding: 4px; }
 
 /* Report */
 .report-inner { padding: 36px 32px 60px; max-width: 680px; }
@@ -543,7 +556,8 @@ watch(() => props.predictionData?.prediction_id, () => { chatMessages.value = []
 .dot-sep { width: 3px; height: 3px; border-radius: 50%; background: var(--c-text-muted); }
 
 /* ── Chat Column ── */
-.chat-top { padding: 14px 18px; border-bottom: 1px solid var(--c-border); flex-shrink: 0; }
+.chat-top { padding: 14px 18px; border-bottom: 1px solid var(--c-border); flex-shrink: 0; cursor: pointer; display: flex; align-items: center; justify-content: space-between; }
+.chat-top:hover { background: var(--c-surface-2); }
 .chat-title { font-family: var(--mono); font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; color: var(--c-text-muted); }
 
 .chat-feed { flex: 1; overflow-y: auto; padding: 16px 18px; }
