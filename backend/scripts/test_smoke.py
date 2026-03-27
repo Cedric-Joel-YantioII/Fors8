@@ -9,7 +9,7 @@ import re
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 # Force env vars
-os.environ['LLM_API_KEY'] = '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'
+os.environ['LLM_API_KEY'] = 'os.environ.get('LLM_API_KEY', 'your-key-here')'
 os.environ['LLM_BASE_URL'] = 'https://openrouter.ai/api/v1'
 from openai import OpenAI
 

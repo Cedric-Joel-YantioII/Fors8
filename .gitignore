@@ -58,3 +58,12 @@ backend/uploads/
 
 # Docker 数据
 data/screenshots/
+
+# Temp files
+/tmp/
+
+# Prediction tracking data (generated at runtime)
+backend/data/brier_scores.json
+
+# Screenshots (large binary files — use external hosting)
+screenshots/
